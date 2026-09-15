@@ -63,7 +63,13 @@ export function Onboarding() {
       updatedAt: now,
     });
 
+    // Spread any existing settings row first — onboarding can run against a
+    // settings row that was pre-seeded (or re-run after a reset), and a bare
+    // put() here would silently erase a saved Gemini key. Same class of bug
+    // as the one fixed in Settings.tsx.
+    const existingSettings = await db.settings.get('app');
     await db.settings.put({
+      ...existingSettings,
       id: 'app',
       units,
       theme,
