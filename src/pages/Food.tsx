@@ -4,6 +4,7 @@ import { ManualFoodSheet } from '../components/ManualFoodSheet';
 import { Card } from '../components/ui/Card';
 import { db, type FoodEntry } from '../lib/db';
 import { estimateCalorieTarget, estimateProteinTarget } from '../lib/nutrition';
+import { useCountUp } from '../lib/useCountUp';
 
 // @zxing/browser (barcode decoding) and the photo sheet are both sizeable —
 // only worth loading once someone actually taps Scan or Photo, not on every visit to this page.
@@ -39,6 +40,10 @@ export function Food() {
 
   const calorieProgress = Math.min(1, totals.calories / Math.max(1, calorieTarget));
   const remaining = Math.round(calorieTarget - totals.calories);
+  const displayCalories = useCountUp(totals.calories);
+  const displayProtein = useCountUp(Math.round(totals.proteinG));
+  const displayCarbs = useCountUp(Math.round(totals.carbsG));
+  const displayFat = useCountUp(Math.round(totals.fatG));
 
   async function addEntry(
     source: FoodEntry['source'],
@@ -82,22 +87,22 @@ export function Food() {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-display text-2xl font-bold tabular-nums text-text">{totals.calories}</span>
+            <span className="font-display text-2xl font-bold tabular-nums text-text">{displayCalories}</span>
             <span className="text-[11px] text-text-faint">of {calorieTarget} kcal</span>
           </div>
         </div>
         <p className="text-sm text-text-muted">{remaining >= 0 ? `${remaining} kcal left today` : `${-remaining} kcal over today`}</p>
         <div className="flex w-full justify-around border-t border-border-soft pt-3 text-center">
           <div>
-            <p className="font-display text-lg font-semibold text-text">{Math.round(totals.proteinG)}g</p>
+            <p className="font-display text-lg font-semibold tabular-nums text-text">{displayProtein}g</p>
             <p className="text-[11px] text-text-faint">protein / {proteinTarget}g</p>
           </div>
           <div>
-            <p className="font-display text-lg font-semibold text-text">{Math.round(totals.carbsG)}g</p>
+            <p className="font-display text-lg font-semibold tabular-nums text-text">{displayCarbs}g</p>
             <p className="text-[11px] text-text-faint">carbs</p>
           </div>
           <div>
-            <p className="font-display text-lg font-semibold text-text">{Math.round(totals.fatG)}g</p>
+            <p className="font-display text-lg font-semibold tabular-nums text-text">{displayFat}g</p>
             <p className="text-[11px] text-text-faint">fat</p>
           </div>
         </div>
@@ -140,7 +145,7 @@ export function Food() {
           .slice()
           .reverse()
           .map((e) => (
-            <div key={e.id} className="flex items-center justify-between rounded-xl border border-border-soft bg-bg-raised px-4 py-3">
+            <div key={e.id} className="animate-rise-in flex items-center justify-between rounded-xl border border-border-soft bg-bg-raised px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-text">{e.name}</p>
                 <p className="text-xs text-text-faint">

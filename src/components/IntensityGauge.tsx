@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useCountUp } from '../lib/useCountUp';
 import type { IntensityResult } from '../lib/training';
 
 export function IntensityGauge({ result }: { result: IntensityResult }) {
@@ -12,6 +13,7 @@ export function IntensityGauge({ result }: { result: IntensityResult }) {
     return () => cancelAnimationFrame(id);
   }, []);
 
+  const displayScore = useCountUp(mounted ? result.score : 0, 900);
   const r = 80;
   const circumference = Math.PI * r; // semicircle
   const progress = mounted ? result.score / 100 : 0;
@@ -41,7 +43,7 @@ export function IntensityGauge({ result }: { result: IntensityResult }) {
         />
       </svg>
       <div className="-mt-10 flex flex-col items-center">
-        <span className="font-display text-4xl font-semibold tabular-nums text-text">{result.score}</span>
+        <span className="font-display text-4xl font-semibold tabular-nums text-text">{displayScore}</span>
         <span className="text-sm font-medium text-text-muted">{result.label} intensity</span>
       </div>
     </div>

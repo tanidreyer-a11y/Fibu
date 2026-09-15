@@ -179,3 +179,29 @@ export function lastSetForExercise(sessions: WorkoutSession[], exerciseId: strin
   }
   return null;
 }
+
+// Deterministic per-session pick (via a hash of score+prCount) rather than
+// random, so revisiting the same summary doesn't change what Fibu "said".
+function pickDeterministic<T>(options: T[], seed: number): T {
+  return options[Math.abs(seed) % options.length];
+}
+
+/** What Fibu actually says on the summary screen — varies by how the session went, not a fixed "Nice work." every time. */
+export function getSessionReaction(intensity: IntensityResult, prCount: number, seed: number): string {
+  if (prCount > 0 && intensity.label === 'High') {
+    return pickDeterministic(
+      ["That's a new best — feel that.", 'Numbers don’t lie. Best session yet.', "You just moved the bar. Literally."],
+      seed,
+    );
+  }
+  if (prCount > 0) {
+    return pickDeterministic(['A new best, and in the books.', 'Quietly a personal record today.', "Didn't feel huge — still a PR."], seed);
+  }
+  if (intensity.label === 'High') {
+    return pickDeterministic(['That was a genuinely hard session.', "That's the kind of session that adds up.", 'Earned, that one.'], seed);
+  }
+  if (intensity.label === 'Moderate') {
+    return pickDeterministic(['Solid. Logged and in the books.', 'Steady work. That counts.', 'A consistent one — those add up too.'], seed);
+  }
+  return pickDeterministic(['A lighter one — it still counts.', 'Showed up. Some days that’s the whole game.', 'Logged, not skipped.'], seed);
+}

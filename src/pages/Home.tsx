@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { LogoMark } from '../components/Logo';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { db } from '../lib/db';
@@ -8,6 +9,7 @@ import { getAiDailyMessage } from '../lib/coach';
 import { getDailyQuote } from '../lib/quotes';
 import { computeSessionVolumeKg } from '../lib/training';
 import { displayWeight } from '../lib/units';
+import { useCountUp } from '../lib/useCountUp';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -42,14 +44,17 @@ export function Home() {
   startOfWeek.setHours(0, 0, 0, 0);
   const sessionsThisWeek = (sessions ?? []).filter((s) => new Date(s.date) >= startOfWeek);
 
+  const weekCount = useCountUp(sessionsThisWeek.length);
+  const lastVolume = useCountUp(lastSession ? displayWeight(computeSessionVolumeKg(lastSession), units) : 0);
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="animate-rise-in">
-        <p className="text-sm font-medium text-text-faint">{dayName}</p>
-        <h1 className="font-display mt-1 text-[28px] font-semibold leading-tight text-text">
-          {profile ? `Hey. Let's get started.` : 'Welcome to Fibu.'}
-        </h1>
-        <p className="mt-2 text-text-muted">&ldquo;{quote}&rdquo;</p>
+      <div className="animate-rise-in flex items-start gap-3">
+        <LogoMark size={34} className="mt-0.5 shrink-0 text-text" />
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-text-faint">{dayName}</p>
+          <p className="font-display mt-1 text-[19px] font-semibold leading-snug text-text">{quote}</p>
+        </div>
       </div>
 
       <Card className="animate-rise-in" style={{ animationDelay: '60ms' }}>
@@ -64,27 +69,29 @@ export function Home() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-2 gap-3 animate-rise-in" style={{ animationDelay: '120ms' }}>
-        <Card className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-text-faint">This week</p>
-          <p className="font-display mt-1 text-2xl font-semibold text-text">{sessionsThisWeek.length}</p>
-          <p className="text-xs text-text-muted">workout{sessionsThisWeek.length === 1 ? '' : 's'} logged</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-text-faint">Last session</p>
+      <Card className="animate-rise-in" style={{ animationDelay: '120ms' }}>
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-text-faint">This week</p>
+            <p className="font-display mt-1 text-4xl font-bold tabular-nums text-text">
+              {weekCount}
+              {profile && <span className="text-lg font-medium text-text-muted"> / {profile.daysPerWeek}</span>}
+            </p>
+            <p className="text-xs text-text-muted">workout{sessionsThisWeek.length === 1 ? '' : 's'} logged</p>
+          </div>
           {lastSession ? (
-            <>
-              <p className="font-display mt-1 text-2xl font-semibold text-text">
-                {displayWeight(computeSessionVolumeKg(lastSession), units)}
-                <span className="text-sm text-text-muted"> {units}</span>
+            <div className="text-right">
+              <p className="text-xs text-text-faint">Last · {lastSession.dayLabel}</p>
+              <p className="font-display text-xl font-semibold tabular-nums text-text">
+                {lastVolume}
+                <span className="text-xs font-medium text-text-muted"> {units}</span>
               </p>
-              <p className="truncate text-xs text-text-muted">{lastSession.dayLabel}</p>
-            </>
+            </div>
           ) : (
-            <p className="mt-1 text-sm text-text-muted">No sessions yet</p>
+            <p className="text-right text-xs text-text-faint">No sessions yet</p>
           )}
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 }
