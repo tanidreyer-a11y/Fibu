@@ -1,0 +1,191 @@
+@import 'tailwindcss';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/600.css';
+@import '@fontsource/space-grotesk/700.css';
+@import '@fontsource/manrope/400.css';
+@import '@fontsource/manrope/500.css';
+@import '@fontsource/manrope/600.css';
+@import '@fontsource/manrope/700.css';
+
+@theme {
+  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, sans-serif;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/*
+ * FIBU brand: black / white / red. White-dominant is the default theme;
+ * dark is an explicit, user-chosen alternative (Settings), not OS-driven —
+ * so tokens are gated on [data-theme], not prefers-color-scheme.
+ * Every pairing below is contrast-checked, not eyeballed (see BRAND.md / brand bible).
+ */
+@theme {
+  --color-bg: #faf9f7;
+  --color-bg-raised: #ffffff;
+  --color-bg-raised-2: #f0efed;
+  --color-border: #e4e2df;
+  --color-border-soft: #eeecea;
+
+  --color-text: #141312;
+  --color-text-muted: #55534f; /* 7.3:1 on --color-bg */
+  --color-text-faint: #706d66; /* 4.9:1 on --color-bg — clears the 4.5:1 body-text floor */
+
+  --color-accent: #ec3346; /* brand red */
+  --color-accent-ink: #141312; /* black ink on the red fill reads better than white — white only clears 4.1:1 */
+  --color-accent-dim: #ec334614;
+
+  --color-danger: #c2410c; /* 5.2:1 on light --color-bg; the dark-theme value below is tuned separately */
+  --color-danger-dim: #c2410c14;
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #0c0c0e;
+  --color-bg-raised: #171719;
+  --color-bg-raised-2: #1f1f22;
+  --color-border: #2c2c30;
+  --color-border-soft: #1c1c1f;
+
+  --color-text: #f2f1ee;
+  --color-text-muted: #a8a8ac; /* 8.2:1 on --color-bg */
+  --color-text-faint: #838280; /* 5.1:1 on --color-bg */
+
+  --color-accent: #ec3346;
+  --color-accent-ink: #0c0c0e;
+  --color-accent-dim: #ec334620;
+
+  --color-danger: #ff8a4c; /* 8.35:1 on dark --color-bg — #c2410c would be too dim against black */
+  --color-danger-dim: #ff8a4c1a;
+}
+
+:root {
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  min-height: 100dvh;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-step-in {
+  animation: step-in 320ms var(--ease-out) both;
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise-in {
+  animation: rise-in 420ms var(--ease-out) both;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

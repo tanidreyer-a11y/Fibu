@@ -1,0 +1,460 @@
+<title>FIBU Brand Bible</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Light is the default (matches the app) — dark is an explicit toggle below, not OS-driven. */
+  :root {
+    --ink: #141312;
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --surface-2: #f0efed;
+    --border: #e4e2df;
+    --border-soft: #eeecea;
+    --text: #141312;
+    --muted: #55534f;
+    --faint: #706d66;
+    --red: #ec3346;
+    --red-ink: #141312;
+    --red-dim: #ec334614;
+    --hero-ink: #0c0c0e; /* the hero band stays dark in both themes — the one deliberate bold moment */
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'Manrope', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  :root[data-theme='dark'] {
+    --ink: #f2f1ee;
+    --bg: #0c0c0e;
+    --surface: #171719;
+    --surface-2: #1f1f22;
+    --border: #2c2c30;
+    --border-soft: #1c1c1f;
+    --text: #f2f1ee;
+    --muted: #a8a8ac;
+    --faint: #838280;
+    --red-ink: #0c0c0e;
+    --red-dim: #ec334620;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 0 24px 96px;
+  }
+  @media (max-width: 700px) { .wrap { padding: 0 20px 72px; } }
+
+  h1, h2, h3, .display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+  .mono { font-family: var(--font-mono); }
+
+  section { margin-top: 88px; }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin: 0 0 10px;
+  }
+  .section-title { font-size: 30px; font-weight: 600; margin-bottom: 8px; }
+  .section-lede { color: var(--muted); max-width: 62ch; font-size: 16px; line-height: 1.6; margin: 0 0 32px; }
+
+  /* ---- Theme toggle ---- */
+  .toggle-row {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 18px 24px 0;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .theme-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+  .theme-toggle button {
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    padding: 7px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+  }
+  .theme-toggle button.active { background: var(--red); color: var(--red-ink); }
+
+  /* ---- Hero ---- */
+  .hero-band {
+    background: var(--hero-ink);
+    color: #f2f1ee;
+    padding: 48px 24px 40px;
+  }
+  .hero-inner { max-width: 920px; margin: 0 auto; }
+  .hero-mark { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .hero-mark .wordmark { font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.02em; }
+  .hero-headline {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(30px, 5vw, 48px);
+    line-height: 1.08;
+    max-width: 16ch;
+    margin: 0 0 16px;
+  }
+  .hero-sub { color: #b9b8b5; font-size: 16px; max-width: 46ch; line-height: 1.6; margin: 0 0 18px; }
+  .hero-tagline {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--red);
+  }
+  .hero-image {
+    width: 100%;
+    height: clamp(220px, 34vw, 420px);
+    object-fit: cover;
+    object-position: 72% 35%;
+    display: block;
+  }
+
+  /* ---- Logo grid ---- */
+  .logo-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 20px; }
+  @media (max-width: 700px) { .logo-grid { grid-template-columns: 1fr; } }
+  .logo-plate {
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+  }
+  .rules-card { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 20px; padding: 28px 32px; }
+  .rules-card h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+  .rules-card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .rules-card li { font-size: 14px; line-height: 1.5; color: var(--muted); padding-left: 18px; position: relative; }
+  .rules-card li::before { content: ''; position: absolute; left: 0; top: 7px; width: 6px; height: 6px; border-radius: 999px; background: var(--red); }
+  .rules-card li.dont::before { background: var(--faint); }
+  .rules-card li b { color: var(--text); font-weight: 600; }
+
+  /* ---- Color swatches ---- */
+  .swatch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 700px) { .swatch-grid { grid-template-columns: repeat(2, 1fr); } }
+  .swatch { border: 1px solid var(--border-soft); border-radius: 16px; overflow: hidden; background: var(--surface); }
+  .swatch .chip { height: 84px; }
+  .swatch .meta { padding: 14px 16px 16px; }
+  .swatch .name { font-size: 13px; font-weight: 600; }
+  .swatch .hex { font-family: var(--font-mono); font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .swatch .role { font-size: 12px; color: var(--muted); margin-top: 8px; line-height: 1.4; min-height: 32px; }
+  .swatch .contrast { margin-top: 10px; font-family: var(--font-mono); font-size: 11px; color: var(--faint); border-top: 1px solid var(--border-soft); padding-top: 8px; }
+  .swatch .contrast b { color: var(--text); }
+
+  .theme-table { width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 13px; }
+  .theme-table th { text-align: left; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); padding: 0 12px 10px 0; border-bottom: 1px solid var(--border); }
+  .theme-table td { padding: 10px 12px 10px 0; border-bottom: 1px solid var(--border-soft); }
+  .theme-table .swab { display: inline-block; width: 12px; height: 12px; border-radius: 4px; margin-right: 8px; vertical-align: -1px; border: 1px solid var(--border); }
+  .theme-table .hexcell { font-family: var(--font-mono); color: var(--muted); }
+
+  /* ---- Type specimens ---- */
+  .type-row { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; padding: 22px 0; border-bottom: 1px solid var(--border-soft); }
+  .type-row:first-of-type { padding-top: 0; }
+  .type-row:last-of-type { border-bottom: none; }
+  .type-row .sample { font-size: 34px; }
+  .type-row .label { font-family: var(--font-mono); font-size: 12px; color: var(--faint); white-space: nowrap; text-align: right; }
+  .type-row .label div:first-child { color: var(--muted); }
+  @media (max-width: 500px) {
+    .type-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .type-row .label { text-align: left; white-space: normal; }
+  }
+
+  /* ---- Voice examples ---- */
+  .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .voice-grid { grid-template-columns: 1fr; } }
+  .voice-card { background: var(--surface); border: 1px solid var(--border-soft); border-left: 3px solid var(--red); border-radius: 4px 14px 14px 4px; padding: 18px 20px; font-size: 15px; line-height: 1.55; }
+  .voice-card.ui { border-left-color: var(--faint); }
+  .voice-card .k { display: block; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+
+  /* ---- Mascot ---- */
+  .mascot-panel { background: var(--surface); border: 1px solid var(--border-soft); border-radius: 20px; padding: 32px; display: grid; grid-template-columns: 200px 1fr; gap: 32px; align-items: center; }
+  @media (max-width: 700px) { .mascot-panel { grid-template-columns: 1fr; } }
+  .mascot-glyph { background: var(--hero-ink); border: 1px solid var(--border-soft); border-radius: 18px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }
+  .mascot-panel p { color: var(--muted); font-size: 15px; line-height: 1.65; margin: 0 0 12px; }
+  .mascot-panel p:last-child { margin-bottom: 0; }
+  .mascot-panel p b { color: var(--text); }
+
+  footer {
+    margin-top: 96px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-soft);
+    color: var(--faint);
+    font-size: 12px;
+    font-family: var(--font-mono);
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+</style>
+
+<div class="toggle-row">
+  <div class="theme-toggle" id="themeToggle">
+    <button data-theme-btn="light" class="active">Light</button>
+    <button data-theme-btn="dark">Dark</button>
+  </div>
+</div>
+
+<div class="hero-band">
+  <div class="hero-inner">
+    <div class="hero-mark">
+      <svg width="28" height="28" viewBox="0 0 512 512">
+        <rect x="152" y="120" width="64" height="272" fill="#f2f1ee" />
+        <rect x="152" y="120" width="208" height="64" fill="#f2f1ee" />
+        <rect x="152" y="232" width="160" height="64" fill="#f2f1ee" />
+        <polygon points="268.5,131 143.5,281 256,281 243.5,381 368.5,231 256,231" fill="#ec3346" />
+      </svg>
+      <span class="wordmark">FIBU</span>
+    </div>
+    <h1 class="hero-headline">The buddy that remembers your numbers.</h1>
+    <p class="hero-sub">Every set, every PR, every muscle worked — logged, not guessed. Built for one person's real gym routine, structured to grow into a tool for coaches.</p>
+    <div class="hero-tagline">MOVE &middot; PROGRESS &middot; ACHIEVE</div>
+  </div>
+</div>
+<img class="hero-image" src="fibu-hero.jpeg" alt="Fibu's robot mascot waving in a red-lit fitness studio" />
+
+<div class="wrap">
+
+  <section style="margin-top:64px;">
+    <p class="kicker">01 — Essence</p>
+    <h2 class="section-title">The buddy that remembers the numbers so you don't have to</h2>
+    <p class="section-lede" style="margin-bottom:0;">
+      Fibu exists for one job: log whatever you actually did today — no forced schedule, no locked-in exercise
+      list — and turn that into a running record of your own progressive overload. It knows the day, it has an
+      opinion on your next set, and it never pretends a rough session was a great one. Energetic, not precious.
+      Direct, not clinical.
+    </p>
+  </section>
+
+  <section>
+    <p class="kicker">02 — Logo</p>
+    <h2 class="section-title">The mark</h2>
+    <p class="section-lede">
+      An F built from three straight blocks, cut through by a single bolt. The bolt is the only diagonal, the
+      only red, and the only thing that's ever allowed to move — it's the "overload" moment in the mark.
+    </p>
+
+    <div class="logo-grid">
+      <div class="logo-plate">
+        <svg width="140" height="140" viewBox="0 0 512 512">
+          <rect x="152" y="120" width="64" height="272" fill="var(--red-ink)" />
+          <rect x="152" y="120" width="208" height="64" fill="var(--red-ink)" />
+          <rect x="152" y="232" width="160" height="64" fill="var(--red-ink)" />
+          <polygon points="268.5,131 143.5,281 256,281 243.5,381 368.5,231 256,231" fill="#ec3346" />
+        </svg>
+      </div>
+      <div class="rules-card">
+        <h3>Usage</h3>
+        <ul>
+          <li><b>Clearspace:</b> keep at least one bolt-width of empty space on every side.</li>
+          <li><b>Minimum size:</b> 24px. Below that, use the bolt alone as a favicon-scale glyph.</li>
+          <li><b>On white</b> (default): black F, red bolt — this is the primary lockup, on app icon and splash.</li>
+          <li><b>On dark:</b> white F, same red bolt, never black-on-black.</li>
+          <li class="dont"><b>Never</b> recolor the bolt, add a drop shadow, outline, or gradient fill.</li>
+          <li class="dont"><b>Never</b> stretch off the 1:1 grid or rotate the mark.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">03 — Color</p>
+    <h2 class="section-title">White-dominant, black type, one red</h2>
+    <p class="section-lede">
+      One accent, rationed. Red marks progress and action — a PR badge, a primary button, the day's progress bar
+      — never twice for two different meanings on the same screen. White is the dominant ground by default; dark
+      is an explicit choice (try the toggle above), not something the OS decides for the user. Ratios below are
+      computed against the surface each color actually sits on, not eyeballed.
+    </p>
+
+    <div class="swatch-grid">
+      <div class="swatch">
+        <div class="chip" style="background:#faf9f7; border-bottom:1px solid var(--border-soft);"></div>
+        <div class="meta">
+          <div class="name">Bg</div>
+          <div class="hex">#FAF9F7</div>
+          <div class="role">Base surface, default theme. Every screen starts here.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#ffffff; border-bottom:1px solid var(--border-soft);"></div>
+        <div class="meta">
+          <div class="name">Surface</div>
+          <div class="hex">#FFFFFF</div>
+          <div class="role">Cards, raised panels.</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#141312;"></div>
+        <div class="meta">
+          <div class="name">Text</div>
+          <div class="hex">#141312</div>
+          <div class="role">Primary text on Bg.</div>
+          <div class="contrast">on Bg: <b>17.6:1</b></div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#55534f;"></div>
+        <div class="meta">
+          <div class="name">Muted</div>
+          <div class="hex">#55534F</div>
+          <div class="role">Secondary text, subtitles.</div>
+          <div class="contrast">on Bg: <b>7.3:1</b></div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#706d66;"></div>
+        <div class="meta">
+          <div class="name">Faint</div>
+          <div class="hex">#706D66</div>
+          <div class="role">Labels, timestamps, hints.</div>
+          <div class="contrast">on Bg: <b>4.9:1</b></div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#ec3346;"></div>
+        <div class="meta">
+          <div class="name">Red</div>
+          <div class="hex">#EC3346</div>
+          <div class="role">The one accent. Buttons, PRs, progress.</div>
+          <div class="contrast">on Bg: <b>4.76:1</b></div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#ec3346; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:12px; color:#141312; font-weight:600;">Aa</div>
+        <div class="meta">
+          <div class="name">Red + black text</div>
+          <div class="hex">not white text</div>
+          <div class="role">Black ink reads better on Red than white does, on either theme.</div>
+          <div class="contrast">black-on-red: <b>4.76:1</b> · white-on-red: 4.10:1</div>
+        </div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:#c2410c;"></div>
+        <div class="meta">
+          <div class="name">Danger</div>
+          <div class="hex">#C2410C</div>
+          <div class="role">Destructive actions only — never Red, so "delete" never reads as "brand".</div>
+          <div class="contrast">on Bg: <b>5.2:1</b></div>
+        </div>
+      </div>
+    </div>
+
+    <table class="theme-table">
+      <thead><tr><th>Token</th><th>Light (default)</th><th>Dark</th></tr></thead>
+      <tbody>
+        <tr><td>Bg</td><td class="hexcell"><span class="swab" style="background:#faf9f7"></span>#FAF9F7</td><td class="hexcell"><span class="swab" style="background:#0c0c0e"></span>#0C0C0E</td></tr>
+        <tr><td>Surface</td><td class="hexcell"><span class="swab" style="background:#ffffff"></span>#FFFFFF</td><td class="hexcell"><span class="swab" style="background:#171719"></span>#171719</td></tr>
+        <tr><td>Text</td><td class="hexcell"><span class="swab" style="background:#141312"></span>#141312</td><td class="hexcell"><span class="swab" style="background:#f2f1ee"></span>#F2F1EE</td></tr>
+        <tr><td>Muted</td><td class="hexcell"><span class="swab" style="background:#55534f"></span>#55534F</td><td class="hexcell"><span class="swab" style="background:#a8a8ac"></span>#A8A8AC</td></tr>
+        <tr><td>Faint</td><td class="hexcell"><span class="swab" style="background:#706d66"></span>#706D66</td><td class="hexcell"><span class="swab" style="background:#838280"></span>#838280</td></tr>
+        <tr><td>Danger</td><td class="hexcell"><span class="swab" style="background:#c2410c"></span>#C2410C</td><td class="hexcell"><span class="swab" style="background:#ff8a4c"></span>#FF8A4C</td></tr>
+        <tr><td>Red (fixed)</td><td class="hexcell"><span class="swab" style="background:#ec3346"></span>#EC3346</td><td class="hexcell"><span class="swab" style="background:#ec3346"></span>#EC3346</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <p class="kicker">04 — Typography</p>
+    <h2 class="section-title">Space Grotesk + Manrope</h2>
+    <p class="section-lede">
+      A geometric display face for numbers and headings — reps, weights, and scores need to read as data, not
+      prose — paired with a warmer humanist body face for everything you actually read. A monospace carries specs
+      and hex values in documents like this one; the app itself never needs it.
+    </p>
+
+    <div class="type-row">
+      <div class="sample" style="font-family: var(--font-display); font-weight:700;">FIBU 72kg &times; 8</div>
+      <div class="label"><div>Space Grotesk 700</div><div>Headings, stat numbers</div></div>
+    </div>
+    <div class="type-row">
+      <div class="sample" style="font-family: var(--font-display); font-weight:600;">Upper Body A</div>
+      <div class="label"><div>Space Grotesk 600</div><div>Section titles, exercise names</div></div>
+    </div>
+    <div class="type-row">
+      <div class="sample" style="font-family: var(--font-body); font-weight:500;">Chase one more rep today.</div>
+      <div class="label"><div>Manrope 500</div><div>Body copy, buttons</div></div>
+    </div>
+    <div class="type-row">
+      <div class="sample" style="font-family: var(--font-mono); font-weight:400; font-size:22px; color:var(--faint);">#EC3346 &middot; 4.76:1</div>
+      <div class="label"><div>JetBrains Mono</div><div>Specs &amp; hex values (docs only)</div></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">05 — Mascot</p>
+    <h2 class="section-title">Logo &amp; marketing only, for now</h2>
+    <div class="mascot-panel">
+      <div class="mascot-glyph">
+        <svg width="72" height="72" viewBox="0 0 512 512">
+          <rect x="152" y="120" width="64" height="272" fill="#f2f1ee" />
+          <rect x="152" y="120" width="208" height="64" fill="#f2f1ee" />
+          <rect x="152" y="232" width="160" height="64" fill="#f2f1ee" />
+          <polygon points="268.5,131 143.5,281 256,281 243.5,381 368.5,231 256,231" fill="#ec3346" />
+        </svg>
+      </div>
+      <div>
+        <p>The oxblood-red robot in the hero above is Fibu's mascot for <b>marketing surfaces</b> — splash art, app store listing, social, documents like this one — not for the in-app interface. That's a deliberate scope call: a minimal, card-based workout logger has no room for an illustrated character without competing for attention against the actual sets and numbers.</p>
+        <p>Its own palette (deep oxblood body, black joints, white glowing face) stays separate from the app's red/white/black system — it's a character, not a UI color.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="kicker">06 — Voice</p>
+    <h2 class="section-title">Direct, earned, never precious</h2>
+    <p class="section-lede">
+      Short sentences. No fitness-influencer clichés. Fibu tells you what happened and what to do next — it
+      doesn't perform enthusiasm. These are real lines already shipping in the app, not invented for this page.
+    </p>
+    <div class="voice-grid">
+      <div class="voice-card"><span class="k">Daily quote</span>"Nobody remembers the sets that felt easy."</div>
+      <div class="voice-card"><span class="k">Daily quote</span>"The bar doesn't care how you feel. Neither should you."</div>
+      <div class="voice-card ui"><span class="k">Overload suggestion</span>"Last time: 60kg × 10. You hit double digits — try 62.5kg × 10 today."</div>
+      <div class="voice-card ui"><span class="k">Empty state</span>"No exercises yet. Add whatever you're actually doing today."</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>FIBU Brand Bible</span>
+    <span>Tokens match <span class="mono">src/index.css</span> exactly — update there first, this page second.</span>
+  </footer>
+
+</div>
+
+<script>
+  document.getElementById('themeToggle').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-theme-btn]');
+    if (!btn) return;
+    const theme = btn.dataset.themeBtn;
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('#themeToggle button').forEach((b) => b.classList.toggle('active', b === btn));
+  });
+</script>
