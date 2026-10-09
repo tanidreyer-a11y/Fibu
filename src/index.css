@@ -329,6 +329,16 @@ input[type='number'] {
   animation: glow-pulse 1.8s var(--ease-in-out) 1;
 }
 
+/* A light band sweeping down the photo while the AI looks at it: shows work is happening without faking progress. */
+@keyframes scan {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(300%);
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

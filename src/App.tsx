@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, type ReactNode } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
+import { DiagPanel } from './components/DiagPanel';
 import { bootstrap } from './lib/bootstrap';
 import { db } from './lib/db';
 import { Body } from './pages/Body';
@@ -37,6 +38,7 @@ function App() {
   useEffect(() => bootstrap(), []);
   return (
     <HashRouter>
+      <DiagPanel />
       <Routes>
         <Route path="/onboarding" element={<Onboarding />} />
         <Route

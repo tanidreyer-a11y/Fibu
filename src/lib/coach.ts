@@ -1,6 +1,6 @@
 import { EXERCISE_LIBRARY } from './exercises';
 import type { Profile, WorkoutSession } from './db';
-import { generateFromImage, generateJSON, generateText, parseJsonReply } from './ai';
+import { generateJSON, generateText } from './ai';
 import { DAILY_QUOTES } from './quotes';
 import { lbToKg } from './units';
 
@@ -95,34 +95,6 @@ If the speaker mentions doing the same reps/weight for N sets (e.g. "three sets 
       })),
     },
   };
-}
-
-export interface MealEstimate {
-  name: string;
-  calories: number;
-  proteinG: number;
-  carbsG: number;
-  fatG: number;
-}
-
-/**
- * Photo-based calorie estimation is inherently approximate — no vision model
- * gets this precise without a scale. Callers must label it "estimate" and
- * let the user edit before saving (see WorkoutSummary-equivalent for food).
- */
-export async function estimateMealFromPhoto(imageDataUrl: string): Promise<{ ok: true; data: MealEstimate } | { ok: false; error: string }> {
-  const prompt = `Look at this photo of a meal and estimate its nutrition. Be a reasonable, experienced dietitian making a fast visual estimate — you won't be exact, just give your best call for the whole plate/portion shown.
-
-Reply with only JSON matching exactly this shape:
-{"name": string (short description of the meal), "calories": number, "proteinG": number, "carbsG": number, "fatG": number}`;
-
-  const result = await generateFromImage(prompt, imageDataUrl, true);
-  if (!result.ok) return result;
-  const data = parseJsonReply<MealEstimate>(result.data);
-  if (!data || typeof data.calories !== 'number') {
-    return { ok: false, error: "Couldn't read that photo — try again with better lighting." };
-  }
-  return { ok: true, data };
 }
 
 /**

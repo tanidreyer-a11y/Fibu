@@ -10,6 +10,7 @@ import { VoiceLogSheet } from '../components/VoiceLogSheet';
 import { Button } from '../components/ui/Button';
 import { PressCard } from '../components/ui/Card';
 import { Sheet } from '../components/ui/Sheet';
+import { localDate } from '../lib/dates';
 import { db, type Exercise, type PlanDay, type Prescription, type SetEntry, type WorkoutSession } from '../lib/db';
 import { exerciseForItem, focusLabel, nextPlanDay, weekVariant } from '../lib/plan';
 import { calculateIntensityScore, lastSetForExercise, suggestProgressiveOverload } from '../lib/training';
@@ -33,6 +34,7 @@ export function WorkoutLog() {
   const [info, setInfo] = useState<Exercise | null>(null);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [startedAt, setStartedAt] = useState<string | null>(null);
 
   const units = settings?.units ?? 'kg';
   const exercisesById = useMemo(() => new Map((exercises ?? []).map((e) => [e.id, e])), [exercises]);
@@ -57,6 +59,7 @@ export function WorkoutLog() {
 
   function startDay(day: PlanDay | null) {
     setDayLabel(day?.label ?? 'Freeform');
+    setStartedAt(new Date().toISOString());
     if (!day) {
       setEntries([]);
       return;
@@ -122,9 +125,9 @@ export function WorkoutLog() {
     const intensity = calculateIntensityScore(draft, recent);
     const now = new Date();
     const id = await db.sessions.add({
-      date: now.toISOString().slice(0, 10),
+      date: localDate(now),
       dayLabel,
-      startedAt: now.toISOString(),
+      startedAt: startedAt ?? now.toISOString(),
       completedAt: now.toISOString(),
       exerciseEntries,
       intensityScore: intensity.score,

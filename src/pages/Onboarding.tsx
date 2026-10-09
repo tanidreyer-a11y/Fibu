@@ -25,6 +25,7 @@ import { Chip } from '../components/ui/Chip';
 import { NumberStepper } from '../components/ui/NumberStepper';
 import { ProgressBar } from '../components/ui/ProgressBar';
 import { writePlanNote } from '../lib/coach';
+import { localDate } from '../lib/dates';
 import {
   db,
   type ActivityLevel,
@@ -309,7 +310,7 @@ export function Onboarding() {
         waterTargetMl: targets.waterMl,
       });
       await db.plan.put({ id: 'active', source: plan.coachNote ? 'ai' : 'rule_based', createdAt: now, ...plan });
-      const today = now.slice(0, 10);
+      const today = localDate();
       const todays = await db.bodyLog.where('date').equals(today).first();
       if (!todays || Math.abs(todays.weightKg - profileDraft.weightKg) > 0.05) {
         await db.bodyLog.add({ date: today, weightKg: profileDraft.weightKg, createdAt: now });

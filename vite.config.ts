@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { aiStatus, runAi } from './api/ai.ts'
+import { searchFoods } from './api/food-search.ts'
 
-/** Serves /api/ai locally with the same core the Vercel function uses, keys read from .env.local. */
+/** Serves /api/* locally with the same cores the Vercel functions use, keys read from .env.local. */
 function devAiApi(env: Record<string, string>): Plugin {
   return {
     name: 'fibu-dev-ai-api',
@@ -29,12 +30,24 @@ function devAiApi(env: Record<string, string>): Plugin {
         const result = await runAi(body, env)
         send(result.status, result.res)
       })
+      server.middlewares.use('/api/food-search', async (req, res) => {
+        const q = new URL(req.url ?? '', 'http://localhost').searchParams.get('q') ?? ''
+        const { status, body } = await searchFoods(q)
+        res.statusCode = status
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(body))
+      })
     },
   }
 }
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
+  define: {
+    __BUILD_TAG__: JSON.stringify(
+      `${new Date().toISOString().slice(0, 16).replace('T', ' ')} ${(process.env.VERCEL_GIT_COMMIT_SHA ?? 'local').slice(0, 7)}`,
+    ),
+  },
   plugins: [
     react(),
     tailwindcss(),
