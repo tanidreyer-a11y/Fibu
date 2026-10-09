@@ -22,7 +22,7 @@ export function WorkoutSummary() {
   const units = settings?.units ?? 'kg';
 
   const exercisesById = useMemo(() => new Map((exercises ?? []).map((e) => [e.id, e])), [exercises]);
-  const bodyState = useMemo(() => (session ? buildBodyState(computeGroupVolumes(session)) : {}), [session]);
+  const bodyState = useMemo(() => (session ? buildBodyState(computeGroupVolumes(session, exercisesById)) : {}), [session, exercisesById]);
 
   const results = useMemo(() => {
     if (!session) return [];
@@ -33,7 +33,7 @@ export function WorkoutSummary() {
         const bestInSession = [...entry.sets].sort((a, b) => b.weightKg - a.weightKg || b.reps - a.reps)[0];
         const priorBest = bestSetForExercise((allSessions ?? []).filter((s) => s.id !== session.id), entry.exerciseId);
         const isPr = !priorBest || bestInSession.weightKg > priorBest.weightKg || (bestInSession.weightKg === priorBest.weightKg && bestInSession.reps > priorBest.reps);
-        return { entry, exercise, isPr, suggestion: suggestProgressiveOverload(bestInSession, units) };
+        return { entry, exercise, isPr, suggestion: suggestProgressiveOverload(bestInSession, units, { exercise, target: entry.target }) };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
   }, [session, exercisesById, allSessions, units]);

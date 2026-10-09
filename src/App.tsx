@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, type ReactNode } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
+import { bootstrap } from './lib/bootstrap';
 import { db } from './lib/db';
 import { Body } from './pages/Body';
 import { Chat } from './pages/Chat';
@@ -33,6 +34,7 @@ function Gate({ children }: { children: ReactNode }) {
 
 function App() {
   useThemeSync();
+  useEffect(() => bootstrap(), []);
   return (
     <HashRouter>
       <Routes>

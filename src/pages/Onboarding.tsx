@@ -4,9 +4,9 @@ import { LogoLockup } from '../components/Logo';
 import { Button } from '../components/ui/Button';
 import { NumberStepper } from '../components/ui/NumberStepper';
 import { db, type Experience, type Goal, type Theme, type Units } from '../lib/db';
-import { seedExercises } from '../lib/exercises';
+import { ensureExerciseLibrary } from '../lib/library';
 import { estimateCalorieTarget, estimateProteinTarget } from '../lib/nutrition';
-import { generateRuleBasedPlan } from '../lib/training';
+import { generatePlan } from '../lib/plan';
 import { lbToKg } from '../lib/units';
 
 const GOALS: { value: Goal; label: string; blurb: string }[] = [
@@ -47,10 +47,7 @@ export function Onboarding() {
     const weightKg = units === 'kg' ? weight : lbToKg(weight);
     const now = new Date().toISOString();
 
-    const existing = await db.exercises.count();
-    if (existing === 0) {
-      await db.exercises.bulkAdd(seedExercises());
-    }
+    await ensureExerciseLibrary();
 
     await db.profile.put({
       id: 'me',
@@ -77,8 +74,8 @@ export function Onboarding() {
       proteinTargetG: estimateProteinTarget(weightKg, goal),
     });
 
-    const days = generateRuleBasedPlan(daysPerWeek, experience);
-    await db.plan.put({ id: 'active', days, source: 'rule_based', createdAt: now });
+    const plan = generatePlan({ daysPerWeek, experience, goal });
+    await db.plan.put({ id: 'active', days: plan.days, reasons: plan.reasons, splitName: plan.splitName, source: 'rule_based', createdAt: now });
 
     navigate('/', { replace: true });
   }

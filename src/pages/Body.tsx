@@ -11,6 +11,8 @@ import { displayWeight } from '../lib/units';
 export function Body() {
   const navigate = useNavigate();
   const sessions = useLiveQuery(() => db.sessions.orderBy('date').reverse().toArray(), [], []);
+  const exercises = useLiveQuery(() => db.exercises.toArray(), [], []);
+  const exercisesById = useMemo(() => new Map((exercises ?? []).map((e) => [e.id, e])), [exercises]);
   const settings = useLiveQuery(() => db.settings.get('app'));
   const units = settings?.units ?? 'kg';
 
@@ -22,14 +24,13 @@ export function Body() {
     const recent = (sessions ?? []).filter((s) => s.date >= weekAgoStr);
     const totals: Partial<Record<MuscleGroup, number>> = {};
     for (const s of recent) {
-      const vols = computeGroupVolumes(s);
+      const vols = computeGroupVolumes(s, exercisesById);
       for (const [group, v] of Object.entries(vols) as [MuscleGroup, number][]) {
         totals[group] = (totals[group] ?? 0) + v;
       }
     }
     return buildBodyState(totals);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessions, weekAgoStr]);
+  }, [sessions, weekAgoStr, exercisesById]);
 
   return (
     <div className="flex flex-col gap-6">

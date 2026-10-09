@@ -6,7 +6,7 @@ import { NumberStepper } from '../components/ui/NumberStepper';
 import { db, type Experience, type Goal, type Theme, type Units } from '../lib/db';
 import { generateText } from '../lib/ai';
 import { estimateCalorieTarget, estimateProteinTarget } from '../lib/nutrition';
-import { generateRuleBasedPlan } from '../lib/training';
+import { generatePlan, planInputFromProfile } from '../lib/plan';
 import { displayWeight, toStorageWeightKg } from '../lib/units';
 
 const GOALS: { value: Goal; label: string }[] = [
@@ -75,13 +75,15 @@ export function Settings() {
   async function save() {
     const now = new Date().toISOString();
     const weightKg = toStorageWeightKg(weight, units);
-    await db.profile.put({ id: 'me', weightKg, heightCm, goal, experience, daysPerWeek, onboardedAt: profile?.onboardedAt ?? now, updatedAt: now });
+    // Spread the stored profile: put() replaces the row, and onboarding v2 adds fields this screen doesn't edit.
+    await db.profile.put({ ...profile, id: 'me', weightKg, heightCm, goal, experience, daysPerWeek, onboardedAt: profile?.onboardedAt ?? now, updatedAt: now });
     await db.settings.put({ ...baseSettings(), units, calorieTarget, proteinTargetG: proteinTarget });
 
-    const planChanged = profile && (profile.daysPerWeek !== daysPerWeek || profile.experience !== experience);
+    const planChanged =
+      profile && (profile.daysPerWeek !== daysPerWeek || profile.experience !== experience || profile.goal !== goal);
     if (planChanged) {
-      const days = generateRuleBasedPlan(daysPerWeek, experience);
-      await db.plan.put({ id: 'active', days, source: 'rule_based', createdAt: now });
+      const plan = generatePlan({ ...planInputFromProfile(profile), daysPerWeek, experience, goal });
+      await db.plan.put({ id: 'active', days: plan.days, reasons: plan.reasons, splitName: plan.splitName, source: 'rule_based', createdAt: now });
     }
 
     setSaved(true);

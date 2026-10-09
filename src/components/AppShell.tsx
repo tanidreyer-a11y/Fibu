@@ -19,7 +19,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </Link>
       <main
         className="flex-1 px-4"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 20px)', paddingBottom: timerActive ? '88px' : '32px' }}
+        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 20px)', paddingBottom: timerActive ? '104px' : '32px' }}
       >
         {children}
       </main>
