@@ -1,10 +1,9 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
+import { generateText } from '../lib/ai';
 import { db } from '../lib/db';
 import { buildChatContext } from '../lib/coach';
-import { generateText } from '../lib/gemini';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -14,8 +13,6 @@ interface ChatMessage {
 const STARTERS = ['What did I bench last week?', 'Should I go heavier today?', "What's lagging behind this week?"];
 
 export function Chat() {
-  const navigate = useNavigate();
-  const settings = useLiveQuery(() => db.settings.get('app'));
   const profile = useLiveQuery(() => db.profile.get('me'));
   const sessions = useLiveQuery(() => db.sessions.orderBy('date').reverse().toArray(), [], []);
 
@@ -43,18 +40,6 @@ export function Chat() {
     const result = await generateText(prompt, 0.6);
     setSending(false);
     setMessages((prev) => [...prev, { role: 'assistant', text: result.ok ? result.data.trim() : result.error }]);
-  }
-
-  if (!settings?.geminiApiKey) {
-    return (
-      <div className="flex flex-col items-center gap-4 pt-16 text-center">
-        <h1 className="font-display text-2xl font-semibold text-text">Ask Fibu</h1>
-        <p className="max-w-xs text-sm text-text-muted">
-          The chat assistant needs a free Gemini key so it can actually reason over your logged history.
-        </p>
-        <Button onClick={() => navigate('/settings')}>Add a key in Settings</Button>
-      </div>
-    );
   }
 
   return (

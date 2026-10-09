@@ -8,10 +8,11 @@ export function Chip({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { active?: boolean; children: ReactNode }) {
   return (
     <button
-      className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-colors duration-150 ease-[var(--ease-out)] active:scale-[0.97] ${
+      aria-pressed={active}
+      className={`press-3d press-3d-sm inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl border-2 px-3.5 py-2 text-sm font-bold ${
         active
-          ? 'border-accent bg-accent-dim text-accent'
-          : 'border-border bg-bg-raised-2 text-text-muted hover:text-text hover:border-text-faint'
+          ? 'border-accent bg-accent-tint text-accent-text [--ledge-color:var(--color-accent)]'
+          : 'border-border bg-bg-raised text-text-muted [--ledge-color:var(--color-border)] [@media(hover:hover)]:hover:text-text'
       } ${className}`}
       {...props}
     >

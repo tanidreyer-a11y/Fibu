@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { FoodEntry } from '../lib/db';
 import { estimateMealFromPhoto } from '../lib/coach';
+import { photoToDataUrl } from '../lib/image';
 import { Button } from './ui/Button';
 
 type Stage = 'pick' | 'estimating' | 'result' | 'error';
@@ -8,18 +9,6 @@ type Stage = 'pick' | 'estimating' | 'result' | 'error';
 interface PhotoEstimateSheetProps {
   onClose: () => void;
   onSave: (entry: Pick<FoodEntry, 'name' | 'calories' | 'proteinG' | 'carbsG' | 'fatG'>) => void;
-}
-
-function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      resolve({ base64: result.split(',')[1] ?? '', mimeType: file.type });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 function Field({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
@@ -51,8 +40,15 @@ export function PhotoEstimateSheet({ onClose, onSave }: PhotoEstimateSheetProps)
   async function handleFile(file: File) {
     setPreview(URL.createObjectURL(file));
     setStage('estimating');
-    const { base64, mimeType } = await fileToBase64(file);
-    const result = await estimateMealFromPhoto(base64, mimeType);
+    let dataUrl: string;
+    try {
+      dataUrl = await photoToDataUrl(file);
+    } catch (err) {
+      setError((err as Error).message);
+      setStage('error');
+      return;
+    }
+    const result = await estimateMealFromPhoto(dataUrl);
     if (!result.ok) {
       setError(result.error);
       setStage('error');

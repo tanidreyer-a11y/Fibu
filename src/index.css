@@ -1,62 +1,104 @@
 @import 'tailwindcss';
-@import '@fontsource/space-grotesk/500.css';
-@import '@fontsource/space-grotesk/600.css';
-@import '@fontsource/space-grotesk/700.css';
-@import '@fontsource/manrope/400.css';
-@import '@fontsource/manrope/500.css';
-@import '@fontsource/manrope/600.css';
-@import '@fontsource/manrope/700.css';
+@import '@fontsource-variable/nunito/wght.css';
 
 @theme {
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
-  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-display: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
+  --font-body: 'Nunito Variable', 'Nunito', system-ui, sans-serif;
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /*
- * FIBU brand: black / white / red. White-dominant is the default theme;
- * dark is an explicit, user-chosen alternative (Settings), not OS-driven —
- * so tokens are gated on [data-theme], not prefers-color-scheme.
- * Every pairing below is contrast-checked, not eyeballed (see BRAND.md / brand bible).
+ * FIBU, Duolingo-style: chunky, tactile, white-dominant. Red stays the one brand
+ * accent; the supporting colours each have a single data job (streak, XP, water,
+ * protein, carbs, fat) and never decorate. Every text pairing below was computed,
+ * not eyeballed (scratch contrast script): body >= 4.5:1, control borders >= 3:1.
  */
 @theme {
-  --color-bg: #faf9f7;
-  --color-bg-raised: #ffffff;
-  --color-bg-raised-2: #f0efed;
-  --color-border: #e4e2df;
-  --color-border-soft: #eeecea;
+  --color-bg: #fbfaf8;
+  --color-bg-raised: #fefefd;
+  --color-bg-raised-2: #f3f2ef;
+  --color-border: #e5e3df;
+  --color-border-soft: #eeece9;
+  --color-border-strong: #8f8a83; /* 3.06:1 — inputs and other control boundaries */
+  --color-ledge: #e2dfda; /* the solid under-edge that makes cards and buttons feel pressable */
 
-  --color-text: #141312;
-  --color-text-muted: #55534f; /* 7.3:1 on --color-bg */
-  --color-text-faint: #706d66; /* 4.9:1 on --color-bg — clears the 4.5:1 body-text floor */
+  --color-text: #1c1a19;
+  --color-text-muted: #57534e; /* 6.8:1 */
+  --color-text-faint: #6b6760; /* 5.0:1 on every surface */
 
-  --color-accent: #ec3346; /* brand red */
-  --color-accent-ink: #141312; /* black ink on the red fill reads better than white — white only clears 4.1:1 */
+  --color-brand: #ec3346; /* logo, rings, large graphics */
+  --color-accent: #e02a3e; /* fills that carry white text: 4.55:1 */
+  --color-accent-ledge: #a3172a;
+  --color-accent-ink: #fefefd;
+  --color-accent-text: #c41f33; /* red used as text on light surfaces: 5.2:1 */
   --color-accent-dim: #ec334614;
+  --color-accent-tint: #fdecee;
 
-  --color-danger: #c2410c; /* 5.2:1 on light --color-bg; the dark-theme value below is tuned separately */
+  --color-streak: #ff7a00;
+  --color-streak-text: #a84a06;
+  --color-streak-tint: #fff1e3;
+  --color-xp: #ffc400;
+  --color-xp-text: #8a5a00;
+  --color-xp-tint: #fff7d6;
+  --color-water: #1cb0f6;
+  --color-water-text: #0a6fa3;
+  --color-water-tint: #e3f5fe;
+  --color-protein: #34a216;
+  --color-protein-text: #2c7a0c;
+  --color-protein-tint: #e9f7e3;
+  --color-carbs: #8f5cf6;
+  --color-carbs-text: #6d3fd9;
+  --color-carbs-tint: #f1ebfe;
+  --color-fat: #f5a00b;
+  --color-fat-text: #a15c00;
+  --color-fat-tint: #fef4e1;
+
+  --color-success: #34a216;
+  --color-success-text: #2c7a0c;
+  --color-danger: #c2410c; /* 5.2:1 */
   --color-danger-dim: #c2410c14;
 }
 
 :root[data-theme='dark'] {
-  --color-bg: #0c0c0e;
-  --color-bg-raised: #171719;
-  --color-bg-raised-2: #1f1f22;
-  --color-border: #2c2c30;
-  --color-border-soft: #1c1c1f;
+  --color-bg: #101012;
+  --color-bg-raised: #1a1a1d;
+  --color-bg-raised-2: #232327;
+  --color-border: #2d2d32;
+  --color-border-soft: #232327;
+  --color-border-strong: #6e6d74;
+  --color-ledge: #2d2d32;
 
-  --color-text: #f2f1ee;
-  --color-text-muted: #a8a8ac; /* 8.2:1 on --color-bg */
-  --color-text-faint: #838280; /* 5.1:1 on --color-bg */
+  --color-text: #f4f3f0;
+  --color-text-muted: #b0aeaa;
+  --color-text-faint: #8f8d89;
 
-  --color-accent: #ec3346;
-  --color-accent-ink: #0c0c0e;
-  --color-accent-dim: #ec334620;
+  --color-brand: #ec3346;
+  --color-accent: #e02a3e;
+  --color-accent-ledge: #8a1222;
+  --color-accent-ink: #fefefd;
+  --color-accent-text: #ff6b7a;
+  --color-accent-dim: #ec334626;
+  --color-accent-tint: #3a1519;
 
-  --color-danger: #ff8a4c; /* 8.35:1 on dark --color-bg — #c2410c would be too dim against black */
+  --color-streak-text: #ffa64d;
+  --color-streak-tint: #3a2410;
+  --color-xp-text: #ffd34d;
+  --color-xp-tint: #352c0c;
+  --color-water-text: #5cc8ff;
+  --color-water-tint: #0d2a38;
+  --color-protein-text: #7ad957;
+  --color-protein-tint: #16290f;
+  --color-carbs-text: #b69bff;
+  --color-carbs-tint: #231a3d;
+  --color-fat-text: #ffbf4d;
+  --color-fat-tint: #33250c;
+
+  --color-success-text: #7ad957;
+  --color-danger: #ff8a4c;
   --color-danger-dim: #ff8a4c1a;
 }
 
@@ -82,11 +124,13 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);
+  font-weight: 600;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior-y: none;
+  caret-color: var(--color-accent);
 }
 
 h1,
@@ -94,7 +138,14 @@ h2,
 h3,
 .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+/* Numbers are data here: weights, reps, calories. Keep columns from jittering. */
+.tabular,
+input[type='number'] {
+  font-variant-numeric: tabular-nums;
 }
 
 ::selection {
@@ -103,7 +154,7 @@ h3,
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 3px solid var(--color-water);
   outline-offset: 2px;
 }
 
@@ -131,10 +182,33 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
+/*
+ * The pressable "ledge": a solid under-edge that the element sinks into on press.
+ * This is the Duolingo button language, a physical-press metaphor, so the zero-blur
+ * edge is the material here, not a decorative offset shadow.
+ */
+@utility press-3d {
+  --ledge-h: 4px;
+  box-shadow: 0 var(--ledge-h) 0 var(--ledge-color, var(--color-ledge));
+  transition:
+    transform 90ms var(--ease-out),
+    box-shadow 90ms var(--ease-out),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+  &:active:not(:disabled) {
+    transform: translateY(var(--ledge-h));
+    box-shadow: 0 0 0 var(--ledge-color, var(--color-ledge));
+  }
+}
+@utility press-3d-sm {
+  --ledge-h: 3px;
+}
+
 @keyframes step-in {
   from {
     opacity: 0;
-    transform: translateX(16px);
+    transform: translateX(24px);
   }
   to {
     opacity: 1;
@@ -148,7 +222,7 @@ input[type='number'] {
 @keyframes rise-in {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -159,11 +233,11 @@ input[type='number'] {
   animation: rise-in 420ms var(--ease-out) both;
 }
 
-/* PR badge / celebratory moments only — rare, first-time-per-PR tier, so overshoot is earned (see §6.5 damping guidance: a flat card reveal doesn't get this, an actual achievement does). */
+/* Achievements only (PRs, streak milestones, level-up): rare, so overshoot is earned. */
 @keyframes pop-in {
   0% {
     opacity: 0;
-    transform: scale(0.5);
+    transform: scale(0.6);
   }
   65% {
     opacity: 1;
@@ -175,6 +249,57 @@ input[type='number'] {
 }
 .animate-pop-in {
   animation: pop-in 480ms var(--ease-out) both;
+}
+
+/* Speech bubbles grow from the robot's mouth corner, not from nowhere. */
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-bubble-in {
+  animation: bubble-in 360ms var(--ease-spring) both;
+  transform-origin: 0% 100%;
+}
+
+/* The robot breathes while it waits for you. Paused off-screen by the browser; off under reduced motion. */
+@keyframes idle-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+.animate-idle-bob {
+  animation: idle-bob 2.8s var(--ease-in-out) infinite;
+}
+
+@keyframes wave-hand {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(-6deg);
+  }
+  30% {
+    transform: rotate(5deg);
+  }
+  45% {
+    transform: rotate(-3deg);
+  }
+}
+.animate-wave {
+  animation: wave-hand 1.6s var(--ease-in-out) 1 both;
+  transform-origin: 50% 90%;
 }
 
 @keyframes glow-pulse {

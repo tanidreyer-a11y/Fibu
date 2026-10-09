@@ -25,7 +25,6 @@ export function Home() {
   const sessions = useLiveQuery(() => db.sessions.orderBy('date').reverse().toArray(), [], []);
 
   useEffect(() => {
-    if (!settings?.geminiApiKey) return;
     let cancelled = false;
     getAiDailyMessage(dayName, curatedQuote).then((text) => {
       if (!cancelled) setQuote(text);
@@ -34,7 +33,7 @@ export function Home() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings?.geminiApiKey, dayName]);
+  }, [dayName]);
 
   const units = settings?.units ?? 'kg';
   const lastSession = sessions?.[0];

@@ -1,6 +1,6 @@
 import { EXERCISE_LIBRARY } from './exercises';
 import type { Profile, WorkoutSession } from './db';
-import { generateFromImage, generateJSON, generateText } from './gemini';
+import { generateFromImage, generateJSON, generateText, parseJsonReply } from './ai';
 import { DAILY_QUOTES } from './quotes';
 import { lbToKg } from './units';
 
@@ -110,21 +110,19 @@ export interface MealEstimate {
  * gets this precise without a scale. Callers must label it "estimate" and
  * let the user edit before saving (see WorkoutSummary-equivalent for food).
  */
-export async function estimateMealFromPhoto(base64: string, mimeType: string): Promise<{ ok: true; data: MealEstimate } | { ok: false; error: string }> {
+export async function estimateMealFromPhoto(imageDataUrl: string): Promise<{ ok: true; data: MealEstimate } | { ok: false; error: string }> {
   const prompt = `Look at this photo of a meal and estimate its nutrition. Be a reasonable, experienced dietitian making a fast visual estimate — you won't be exact, just give your best call for the whole plate/portion shown.
 
 Reply with only JSON matching exactly this shape:
 {"name": string (short description of the meal), "calories": number, "proteinG": number, "carbsG": number, "fatG": number}`;
 
-  const result = await generateFromImage(prompt, { base64, mimeType }, true);
+  const result = await generateFromImage(prompt, imageDataUrl, true);
   if (!result.ok) return result;
-  try {
-    const data = JSON.parse(result.data) as MealEstimate;
-    if (typeof data.calories !== 'number') throw new Error('bad shape');
-    return { ok: true, data };
-  } catch {
+  const data = parseJsonReply<MealEstimate>(result.data);
+  if (!data || typeof data.calories !== 'number') {
     return { ok: false, error: "Couldn't read that photo — try again with better lighting." };
   }
+  return { ok: true, data };
 }
 
 export function buildChatContext(profile: Profile | undefined, recentSessions: WorkoutSession[]): string {

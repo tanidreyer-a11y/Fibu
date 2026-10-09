@@ -4,7 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { NumberStepper } from '../components/ui/NumberStepper';
 import { db, type Experience, type Goal, type Theme, type Units } from '../lib/db';
-import { generateText } from '../lib/gemini';
+import { generateText } from '../lib/ai';
 import { estimateCalorieTarget, estimateProteinTarget } from '../lib/nutrition';
 import { generateRuleBasedPlan } from '../lib/training';
 import { displayWeight, toStorageWeightKg } from '../lib/units';
@@ -35,9 +35,8 @@ export function Settings() {
   const [calorieTarget, setCalorieTarget] = useState(2200);
   const [proteinTarget, setProteinTarget] = useState(150);
   const [saved, setSaved] = useState(false);
-  const [geminiKeyInput, setGeminiKeyInput] = useState('');
-  const [keyTest, setKeyTest] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
-  const [keyTestMessage, setKeyTestMessage] = useState('');
+  const [aiTest, setAiTest] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
+  const [aiTestMessage, setAiTestMessage] = useState('');
 
   useEffect(() => {
     if (!profile || !settings) return;
@@ -51,13 +50,9 @@ export function Settings() {
     setProteinTarget(settings.proteinTargetG ?? estimateProteinTarget(profile.weightKg, profile.goal));
   }, [profile, settings]);
 
-  useEffect(() => {
-    setGeminiKeyInput(settings?.geminiApiKey ?? '');
-  }, [settings?.geminiApiKey]);
-
   // Dexie's put() replaces the whole row, so every partial update here must
   // spread the current settings first — writing just {id, theme} would
-  // silently drop the saved API key and nutrition targets.
+  // silently drop the saved nutrition targets.
   function baseSettings() {
     return { id: 'app' as const, units: settings?.units ?? units, theme: settings?.theme ?? 'light', ...settings };
   }
@@ -66,21 +61,14 @@ export function Settings() {
     await db.settings.put({ ...baseSettings(), theme });
   }
 
-  async function saveGeminiKey() {
-    await db.settings.put({ ...baseSettings(), geminiApiKey: geminiKeyInput.trim() || undefined });
-    setKeyTest('idle');
-  }
-
-  async function testGeminiKey() {
-    await saveGeminiKey();
-    setKeyTest('testing');
+  async function testAi() {
+    setAiTest('testing');
     const result = await generateText('Reply with exactly one word: ready.', 0);
     if (result.ok) {
-      setKeyTest('ok');
-      setKeyTestMessage(result.data.trim());
+      setAiTest('ok');
     } else {
-      setKeyTest('error');
-      setKeyTestMessage(result.error);
+      setAiTest('error');
+      setAiTestMessage(result.error);
     }
   }
 
@@ -204,36 +192,19 @@ export function Settings() {
 
       <Card className="flex flex-col gap-3">
         <div>
-          <p className="text-sm font-medium text-text-muted">AI coach (optional)</p>
+          <p className="text-sm font-medium text-text-muted">Fibu AI</p>
           <p className="mt-1 text-xs text-text-faint">
-            Powers the daily AI message, chat assistant, voice logging, and meal-photo estimates. Free from{' '}
-            <a href="https://aistudio.google.com" target="_blank" rel="noreferrer" className="text-accent underline">
-              Google AI Studio
-            </a>
-            . Stored only on this device — never sent anywhere but Google's API. On the free tier Google may log
-            prompts to improve their models, worth knowing since this includes your workout and meal data.
+            Built in — nothing to set up. Powers the coach chat, voice logging and meal photos. Your messages and
+            photos go to the AI only when you use those features.
           </p>
         </div>
-        <input
-          type="password"
-          autoComplete="off"
-          value={geminiKeyInput}
-          onChange={(e) => setGeminiKeyInput(e.target.value)}
-          onBlur={saveGeminiKey}
-          placeholder="Paste your Gemini API key"
-          className="h-11 w-full rounded-xl border border-border bg-bg-raised-2 px-4 text-sm text-text placeholder:text-text-faint outline-none focus:border-accent"
-        />
         <div className="flex items-center gap-3">
-          <Button variant="secondary" size="md" disabled={!geminiKeyInput || keyTest === 'testing'} onClick={testGeminiKey}>
-            {keyTest === 'testing' ? 'Testing…' : 'Test connection'}
+          <Button variant="secondary" size="md" disabled={aiTest === 'testing'} onClick={testAi}>
+            {aiTest === 'testing' ? 'Checking…' : 'Check connection'}
           </Button>
-          {keyTest === 'ok' && <span className="text-xs font-medium text-accent">Connected ({keyTestMessage})</span>}
-          {keyTest === 'error' && <span className="text-xs font-medium text-danger">{keyTestMessage}</span>}
+          {aiTest === 'ok' && <span className="text-xs font-medium text-accent">Connected ✓</span>}
+          {aiTest === 'error' && <span className="text-xs font-medium text-danger">{aiTestMessage}</span>}
         </div>
-      </Card>
-
-      <Card className="text-sm text-text-muted">
-        Voice logging and meal-photo estimates are coming in the next build phase — they'll live here once wired up.
       </Card>
     </div>
   );

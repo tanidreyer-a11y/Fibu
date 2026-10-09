@@ -1,22 +1,29 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type Size = 'md' | 'lg' | 'icon';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
+type Size = 'sm' | 'md' | 'lg' | 'icon';
 
 const base =
-  'inline-flex items-center justify-center gap-2 font-display font-medium rounded-xl transition-[transform,background-color,box-shadow,border-color] duration-150 ease-[var(--ease-out)] active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none select-none';
+  'inline-flex items-center justify-center gap-2 rounded-2xl font-display font-extrabold select-none disabled:pointer-events-none';
+
+// Disabled buttons go flat grey (not just faded) so "you can't tap this yet" reads at a glance.
+const pressable =
+  'press-3d disabled:bg-bg-raised-2 disabled:text-text-faint disabled:border-transparent disabled:[--ledge-color:var(--color-border)]';
 
 const variants: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-ink hover:brightness-110',
-  secondary: 'bg-bg-raised-2 text-text border border-border hover:border-text-faint',
-  ghost: 'bg-transparent text-text-muted hover:text-text hover:bg-bg-raised',
-  danger: 'bg-danger-dim text-danger border border-danger/30 hover:bg-danger/20',
+  primary: `${pressable} bg-accent text-accent-ink [--ledge-color:var(--color-accent-ledge)] [@media(hover:hover)]:hover:brightness-105`,
+  secondary: `${pressable} border-2 border-border bg-bg-raised text-text [--ledge-color:var(--color-border)] [@media(hover:hover)]:hover:bg-bg-raised-2`,
+  danger: `${pressable} border-2 border-border bg-bg-raised text-danger [--ledge-color:var(--color-border)]`,
+  success: `${pressable} bg-success text-accent-ink [--ledge-color:#22700c]`,
+  ghost:
+    'bg-transparent text-text-muted transition-colors duration-150 active:opacity-70 [@media(hover:hover)]:hover:text-text disabled:opacity-40',
 };
 
 const sizes: Record<Size, string> = {
-  md: 'h-11 px-4 text-[15px]',
-  lg: 'h-13 px-6 text-base',
-  icon: 'h-11 w-11',
+  sm: 'h-10 px-3.5 text-sm',
+  md: 'h-12 px-5 text-[15px]',
+  lg: 'h-14 px-6 text-base uppercase tracking-[0.06em]',
+  icon: 'h-12 w-12',
 };
 
 export function Button({
