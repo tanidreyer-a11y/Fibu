@@ -25,14 +25,14 @@ export function IntensityGauge({ result }: { result: IntensityResult }) {
         <path
           d="M 20 100 A 80 80 0 0 1 180 100"
           fill="none"
-          stroke="var(--color-border)"
+          stroke="var(--color-bg-raised-2)"
           strokeWidth="14"
           strokeLinecap="round"
         />
         <path
           d="M 20 100 A 80 80 0 0 1 180 100"
           fill="none"
-          stroke="var(--color-accent)"
+          stroke="var(--color-brand)"
           strokeWidth="14"
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -43,8 +43,8 @@ export function IntensityGauge({ result }: { result: IntensityResult }) {
         />
       </svg>
       <div className="-mt-10 flex flex-col items-center">
-        <span className="font-display text-4xl font-semibold tabular-nums text-text">{displayScore}</span>
-        <span className="text-sm font-medium text-text-muted">{result.label} intensity</span>
+        <span className="font-display text-4xl font-black tabular-nums text-text">{displayScore}</span>
+        <span className="text-sm font-extrabold text-text-muted">{result.label} intensity</span>
       </div>
     </div>
   );

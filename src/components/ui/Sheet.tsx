@@ -1,5 +1,5 @@
 import { X } from '@phosphor-icons/react';
-import { useEffect, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 interface SheetProps {
   title: string;
@@ -13,8 +13,25 @@ interface SheetProps {
   leading?: ReactNode;
 }
 
-/** Bottom sheet: slides up on the drawer curve, closes on backdrop tap or Escape. */
-export function Sheet({ title, onClose, children, footer, tall = false, leading }: SheetProps) {
+const EXIT_MS = 220;
+
+/**
+ * Bottom sheet: slides up on the drawer curve and, when dismissed, slides back
+ * down the same edge (symmetric paths make dismissal read as "put away").
+ * Closes on backdrop tap, the X, or Escape.
+ */
+export function Sheet({ title, onClose: onCloseProp, children, footer, tall = false, leading }: SheetProps) {
+  const [closing, setClosing] = useState(false);
+  const closeRef = useRef(onCloseProp);
+  useEffect(() => {
+    closeRef.current = onCloseProp;
+  }, [onCloseProp]);
+  const onClose = useCallback(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return closeRef.current();
+    setClosing(true);
+    window.setTimeout(() => closeRef.current(), EXIT_MS);
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     window.addEventListener('keydown', onKey);
@@ -28,11 +45,15 @@ export function Sheet({ title, onClose, children, footer, tall = false, leading 
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end" role="dialog" aria-modal="true" aria-label={title}>
-      <button aria-label="Close" className="absolute inset-0 animate-[fade-in_200ms_ease-out_both] bg-black/50" onClick={onClose} />
+      <button
+        aria-label="Close"
+        className={`absolute inset-0 bg-black/50 ${closing ? 'animate-[fade-out_220ms_var(--ease-out)_both]' : 'animate-[fade-in_200ms_ease-out_both]'}`}
+        onClick={onClose}
+      />
       <div
-        className={`relative mx-auto flex w-full max-w-md animate-[sheet-up_300ms_var(--ease-drawer)_both] flex-col rounded-t-3xl border-2 border-b-0 border-border bg-bg-raised ${
-          tall ? 'h-[88dvh]' : 'max-h-[88dvh]'
-        }`}
+        className={`relative mx-auto flex w-full max-w-md flex-col rounded-t-3xl border-2 border-b-0 border-border bg-bg-raised ${
+          closing ? 'animate-[sheet-down_220ms_var(--ease-out)_both]' : 'animate-[sheet-up_300ms_var(--ease-drawer)_both]'
+        } ${tall ? 'h-[88dvh]' : 'max-h-[88dvh]'}`}
       >
         <div className="mx-auto mt-2.5 h-1.5 w-10 shrink-0 rounded-full bg-border" />
         <div className="flex shrink-0 items-center gap-2 px-4 pt-2 pb-3">

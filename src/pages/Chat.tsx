@@ -37,7 +37,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 function Card({ card, onUndo }: { card: ActionCard; onUndo?: () => void }) {
   const IconC = CARD_ICON[card.kind];
   return (
-    <div className={`animate-pop-in flex items-center gap-3 rounded-2xl border-2 px-3 py-2.5 ${card.undone ? 'border-border bg-bg-raised-2 opacity-70' : 'border-success/40 bg-protein-tint'}`}>
+    <div className={`animate-rise-in flex items-center gap-3 rounded-2xl border-2 px-3 py-2.5 ${card.undone ? 'border-border bg-bg-raised-2 opacity-70' : 'border-success/40 bg-protein-tint'}`}>
       <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl ${card.undone ? 'bg-bg-raised text-text-faint' : 'bg-success text-accent-ink'}`}>
         {card.undone ? <ArrowCounterClockwise size={18} weight="bold" /> : <IconC size={18} weight="fill" />}
       </span>

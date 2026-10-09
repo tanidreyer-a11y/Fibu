@@ -149,7 +149,7 @@ export function WorkoutLog() {
       source: 'app',
     });
     useRestTimer.getState().dismiss();
-    navigate(`/summary/${id}`, { replace: true });
+    navigate(`/summary/${id}`, { replace: true, state: { fresh: true } });
   }
 
   if (!dayLabel) {

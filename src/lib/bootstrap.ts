@@ -1,6 +1,7 @@
 import { db } from './db';
 import { ensureExerciseLibrary } from './library';
 import { generatePlan, planInputFromProfile } from './plan';
+import { loadProgressData, syncAchievements } from './progress';
 
 /** v1 plans were bare exercise lists; give existing users a real plan (slots, sets × reps, rest) once. */
 async function upgradeLegacyPlan(): Promise<void> {
@@ -18,4 +19,8 @@ export function bootstrap(): void {
   started = true;
   ensureExerciseLibrary().catch((err) => console.warn('[fibu] exercise library', err));
   upgradeLegacyPlan().catch((err) => console.warn('[fibu] plan upgrade', err));
+  // Award badges already earned by past activity (quietly; new ones are celebrated after workouts).
+  loadProgressData()
+    .then(syncAchievements)
+    .catch((err) => console.warn('[fibu] achievements', err));
 }
