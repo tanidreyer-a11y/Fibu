@@ -32,6 +32,6 @@ export function createSpeechRecognition(): SpeechRecognitionLike | null {
   const recognition = new Ctor();
   recognition.continuous = false;
   recognition.interimResults = true;
-  recognition.lang = 'en-US';
+  recognition.lang = navigator.language || 'en-US';
   return recognition;
 }

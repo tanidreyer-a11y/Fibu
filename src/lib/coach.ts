@@ -1,5 +1,4 @@
 import { EXERCISE_LIBRARY } from './exercises';
-import type { Profile, WorkoutSession } from './db';
 import { generateJSON, generateText } from './ai';
 import { DAILY_QUOTES } from './quotes';
 import { lbToKg } from './units';
@@ -128,25 +127,4 @@ Reply with only the note.`;
   if (!result.ok) return null;
   const text = result.data.trim().replace(/^["']|["']$/g, '');
   return text.length > 20 && text.length < 500 ? text : null;
-}
-
-export function buildChatContext(profile: Profile | undefined, recentSessions: WorkoutSession[]): string {
-  const lines: string[] = [];
-  if (profile) {
-    lines.push(
-      `Profile: ${profile.goal.replace('_', ' ')}, ${profile.experience} experience, trains ${profile.daysPerWeek}x/week, ${profile.weightKg}kg bodyweight.`,
-    );
-  }
-  if (recentSessions.length === 0) {
-    lines.push('No workouts logged yet.');
-  } else {
-    lines.push('Recent sessions:');
-    for (const s of recentSessions.slice(0, 8)) {
-      const exerciseSummary = s.exerciseEntries
-        .map((e) => `${e.exerciseId} (${e.sets.map((set) => `${set.weightKg}kg×${set.reps}`).join(', ')})`)
-        .join('; ');
-      lines.push(`- ${s.date} ${s.dayLabel}: ${exerciseSummary || 'no sets logged'}`);
-    }
-  }
-  return lines.join('\n');
 }

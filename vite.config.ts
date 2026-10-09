@@ -27,12 +27,18 @@ function devAiApi(env: Record<string, string>): Plugin {
         } catch {
           return send(400, { ok: false, error: 'bad_request', detail: 'Invalid JSON' })
         }
-        const result = await runAi(body, env)
-        send(result.status, result.res)
+        try {
+          const result = await runAi(body, env)
+          send(result.status, result.res)
+        } catch (err) {
+          // Never let one bad request take the whole dev server down.
+          console.error('[ai] dev handler error', err)
+          send(500, { ok: false, error: 'upstream' })
+        }
       })
       server.middlewares.use('/api/food-search', async (req, res) => {
         const q = new URL(req.url ?? '', 'http://localhost').searchParams.get('q') ?? ''
-        const { status, body } = await searchFoods(q)
+        const { status, body } = await searchFoods(q).catch(() => ({ status: 500, body: { ok: false, error: 'server' } }))
         res.statusCode = status
         res.setHeader('Content-Type', 'application/json')
         res.end(JSON.stringify(body))

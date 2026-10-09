@@ -1,6 +1,6 @@
 ﻿import { Lightning, Microphone, Plus, Sparkle } from '@phosphor-icons/react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ExerciseDetail } from '../components/ExerciseDetail';
 import { ExerciseEntryCard, type DraftSet } from '../components/ExerciseEntryCard';
@@ -41,6 +41,21 @@ export function WorkoutLog() {
   const variant = weekVariant();
   const lastSession = sessions?.[sessions.length - 1];
   const upNext = plan ? nextPlanDay(plan.days, lastSession?.dayLabel) : undefined;
+
+  // Fibu's chat can say "start my workout": it leaves the day in sessionStorage and opens this screen.
+  useEffect(() => {
+    if (dayLabel || !plan || !exercises?.length) return;
+    let wanted: string | null = null;
+    try {
+      wanted = sessionStorage.getItem('fibu:startDay');
+      sessionStorage.removeItem('fibu:startDay');
+    } catch {
+      return;
+    }
+    if (wanted) startDay(wanted === 'Freeform' ? null : (plan.days.find((d) => d.label === wanted) ?? null));
+    // startDay reads current state; run only when the plan/exercises first arrive.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plan, exercises?.length]);
 
   /** Pre-fill sets with last time's numbers nudged by the overload rule, or a sensible start. */
   function startingSets(exerciseId: string, target?: Prescription): DraftSet[] {

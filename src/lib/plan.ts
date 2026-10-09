@@ -59,7 +59,7 @@ const LEVEL_RANK: Record<Level, number> = { beginner: 0, intermediate: 1, expert
 const EXPERIENCE_RANK: Record<Experience, number> = { beginner: 0, intermediate: 1, advanced: 2 };
 
 /** The proven go-to lifts. They win ties, so plans read like a coach wrote them. */
-const STAPLES = new Set([
+export const STAPLES = new Set([
   'barbell-bench-press', 'dumbbell-bench-press', 'incline-dumbbell-press', 'push-up', 'back-squat', 'goblet-squat', 'leg-press',
   'deadlift', 'romanian-deadlift', 'dumbbell-rdl', 'hip-thrust', 'barbell-row', 'dumbbell-row', 'seated-cable-row', 'lat-pulldown',
   'pull-up', 'chin-up', 'overhead-press', 'seated-db-shoulder-press', 'lateral-raise', 'face-pull', 'rear-delt-fly', 'dumbbell-curl',

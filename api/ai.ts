@@ -45,14 +45,30 @@ const LIMITS = {
   maxTokens: 2048,
 };
 
-const GROQ = {
-  url: 'https://api.groq.com/openai/v1/chat/completions',
-  model: 'qwen/qwen3.8-27b',
+type Provider = 'groq' | 'gemini';
+
+interface Route {
+  provider: Provider;
+  model: string;
+  vision: boolean;
+}
+
+const URLS: Record<Provider, string> = {
+  groq: 'https://api.groq.com/openai/v1/chat/completions',
+  gemini: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
 };
-const GEMINI = {
-  url: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-  model: 'gemini-3.6-flash',
-};
+
+/**
+ * Tried in order until one answers. Groq's free tier limits each model separately
+ * (~7k input tokens a minute), so text-only requests roll over to two more Groq
+ * models before Gemini. Only Qwen and Gemini can read photos.
+ */
+const ROUTES: Route[] = [
+  { provider: 'groq', model: 'qwen/qwen3.8-27b', vision: true },
+  { provider: 'groq', model: 'openai/gpt-oss-120b', vision: false },
+  { provider: 'groq', model: 'openai/gpt-oss-20b', vision: false },
+  { provider: 'gemini', model: 'gemini-3.6-flash', vision: true },
+];
 
 // Gemini 3 requires a thought signature on every replayed tool call. Calls that
 // came from Groq don't have one, so they get Google's documented bypass value.
@@ -87,7 +103,12 @@ function validate(body: unknown): { ok: true; req: AiRequest } | { ok: false; st
   return { ok: true, req };
 }
 
-function providerBody(provider: 'groq' | 'gemini', req: AiRequest): Record<string, unknown> {
+function hasImage(req: AiRequest): boolean {
+  return req.messages.some((m) => Array.isArray(m.content) && (m.content as { type?: string }[]).some((p) => p?.type === 'image_url'));
+}
+
+function providerBody(route: Route, req: AiRequest): Record<string, unknown> {
+  const provider = route.provider;
   const messages = req.messages.map((m) => {
     if (!m.tool_calls) return m;
     const tool_calls = m.tool_calls.map((tc) => {
@@ -107,14 +128,16 @@ function providerBody(provider: 'groq' | 'gemini', req: AiRequest): Record<strin
   }
   if (req.json) body.response_format = { type: 'json_object' };
 
+  body.model = route.model;
   if (provider === 'groq') {
-    body.model = GROQ.model;
     body.temperature = typeof req.temperature === 'number' ? Math.min(Math.max(req.temperature, 0), 1.5) : 0.6;
-    body.max_completion_tokens = Math.min(req.maxTokens ?? 1024, LIMITS.maxTokens);
+    // gpt-oss always reasons a little before answering, so give it headroom on top of the reply.
+    const reasoningHeadroom = route.model.startsWith('openai/') ? 1024 : 0;
+    body.max_completion_tokens = Math.min(req.maxTokens ?? 1024, LIMITS.maxTokens) + reasoningHeadroom;
     // Qwen thinks by default; for logging and short coaching replies that only adds latency.
-    body.reasoning_effort = 'none';
+    // gpt-oss can't switch reasoning off, "low" is its fastest setting.
+    body.reasoning_effort = route.model.startsWith('openai/') ? 'low' : 'none';
   } else {
-    body.model = GEMINI.model;
     // Gemini 3 is tuned for its default temperature; lowering it can cause loops.
     body.reasoning_effort = 'low';
   }
@@ -128,29 +151,29 @@ interface Attempt {
   detail?: string;
 }
 
-async function callProvider(provider: 'groq' | 'gemini', key: string, req: AiRequest): Promise<Attempt> {
-  const target = provider === 'groq' ? GROQ : GEMINI;
+async function callRoute(route: Route, key: string, req: AiRequest): Promise<Attempt> {
+  const label = `${route.provider}/${route.model}`;
   let res: Response;
   try {
-    res = await fetch(target.url, {
+    res = await fetch(URLS[route.provider], {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify(providerBody(provider, req)),
-      signal: AbortSignal.timeout(provider === 'groq' ? 25_000 : 40_000),
+      body: JSON.stringify(providerBody(route, req)),
+      signal: AbortSignal.timeout(route.provider === 'groq' ? 25_000 : 40_000),
     });
   } catch (err) {
-    return { ok: false, status: 0, detail: `${provider}: ${(err as Error).name}` };
+    return { ok: false, status: 0, detail: `${label}: ${(err as Error).name}` };
   }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    return { ok: false, status: res.status, detail: `${provider} ${res.status}: ${text.slice(0, 300)}` };
+    return { ok: false, status: res.status, detail: `${label} ${res.status}: ${text.slice(0, 300)}` };
   }
 
   const json = (await res.json().catch(() => null)) as { choices?: { message?: Attempt['message'] }[] } | null;
   const msg = json?.choices?.[0]?.message;
   if (!msg || (!msg.content && !msg.tool_calls?.length)) {
-    return { ok: false, status: 502, detail: `${provider}: empty response` };
+    return { ok: false, status: 502, detail: `${label}: empty response` };
   }
   return {
     ok: true,
@@ -167,21 +190,17 @@ export async function runAi(body: unknown, env: AiEnv): Promise<{ status: number
   const checked = validate(body);
   if (!checked.ok) return { status: checked.status, res: checked.res };
 
-  const providers = (
-    [
-      ['groq', env.GROQ_API_KEY?.trim()],
-      ['gemini', env.GEMINI_API_KEY?.trim()],
-    ] as const
-  ).filter((p): p is readonly ['groq' | 'gemini', string] => Boolean(p[1]));
-
-  if (providers.length === 0) return { status: 503, res: { ok: false, error: 'not_configured' } };
+  const keys: Record<Provider, string | undefined> = { groq: env.GROQ_API_KEY?.trim(), gemini: env.GEMINI_API_KEY?.trim() };
+  const needsVision = hasImage(checked.req);
+  const routes = ROUTES.filter((r) => keys[r.provider] && (r.vision || !needsVision));
+  if (routes.length === 0) return { status: 503, res: { ok: false, error: 'not_configured' } };
 
   const failures: Attempt[] = [];
-  for (const [name, key] of providers) {
-    const attempt = await callProvider(name, key, checked.req);
-    if (attempt.ok && attempt.message) return { status: 200, res: { ok: true, provider: name, message: attempt.message } };
+  for (const route of routes) {
+    const attempt = await callRoute(route, keys[route.provider]!, checked.req);
+    if (attempt.ok && attempt.message) return { status: 200, res: { ok: true, provider: route.provider, message: attempt.message } };
     failures.push(attempt);
-    console.warn('[ai] provider failed', attempt.detail);
+    console.warn('[ai] route failed', attempt.detail);
   }
 
   const rateLimited = failures.some((f) => f.status === 429);
