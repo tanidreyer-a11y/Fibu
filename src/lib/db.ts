@@ -105,6 +105,10 @@ export interface Plan {
   /** why this plan fits: shown on the plan reveal and in Settings */
   reasons?: string[];
   splitName?: string;
+  /** Fibu's personal note about the plan (AI-written when available) */
+  coachNote?: string;
+  /** weekdays (0 = Sunday) the plan expects you to train, in order of plan days */
+  schedule?: number[];
 }
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';

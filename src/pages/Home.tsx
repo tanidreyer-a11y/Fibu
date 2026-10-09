@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogoMark } from '../components/Logo';
 import { Button } from '../components/ui/Button';
-import { Card } from '../components/ui/Card';
+import { Mascot } from '../components/Mascot';
+import { Card, PressCard } from '../components/ui/Card';
 import { db } from '../lib/db';
 import { getAiDailyMessage } from '../lib/coach';
 import { getDailyQuote } from '../lib/quotes';
@@ -55,6 +56,16 @@ export function Home() {
           <p className="font-display mt-1 text-[19px] font-semibold leading-snug text-text">{quote}</p>
         </div>
       </div>
+
+      {profile && (!profile.birthYear || !profile.equipment) && (
+        <PressCard onClick={() => navigate('/onboarding')} className="animate-rise-in flex items-center gap-3 !border-accent [--ledge-color:var(--color-accent)]">
+          <Mascot pose="head" size={52} />
+          <span className="flex-1">
+            <span className="font-display block text-[16px] font-extrabold text-text">Finish your profile</span>
+            <span className="block text-[13px] font-bold text-text-muted">10 quick questions and I'll build your proper plan. Your history stays.</span>
+          </span>
+        </PressCard>
+      )}
 
       <Card className="animate-rise-in" style={{ animationDelay: '60ms' }}>
         <p className="text-sm text-text-muted">What do you want to do today?</p>

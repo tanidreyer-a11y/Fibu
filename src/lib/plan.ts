@@ -47,6 +47,8 @@ const SLOT_FALLBACK: Partial<Record<Pattern, Pattern[]>> = {
   traps: ['rear-delt', 'h-pull'],
   'rear-delt': ['h-pull'],
   'side-delt': ['v-push', 'rear-delt', 'core'],
+  // No overhead pressing (sore shoulder): an incline-style press is the gentler stand-in.
+  'v-push': ['h-push', 'side-delt'],
   'v-pull': ['h-pull'],
   biceps: ['h-pull'],
   triceps: ['h-push'],
@@ -264,6 +266,20 @@ export function planInputFromProfile(profile: Profile): PlanInput {
     injuries: profile.injuries,
     hasBar: profile.hasPullUpBar,
   };
+}
+
+/** Spread training days across the week with rest between where possible (0 = Sunday). */
+export function defaultSchedule(daysPerWeek: number): number[] {
+  const map: Record<number, number[]> = {
+    1: [3],
+    2: [1, 4],
+    3: [1, 3, 5],
+    4: [1, 2, 4, 5],
+    5: [1, 2, 3, 5, 6],
+    6: [1, 2, 3, 4, 5, 6],
+    7: [1, 2, 3, 4, 5, 6, 0],
+  };
+  return map[Math.min(7, Math.max(1, daysPerWeek))];
 }
 
 /** Next plan day after the most recent session, so "Today's workout" walks through the week in order. */

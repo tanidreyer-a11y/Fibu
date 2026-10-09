@@ -125,6 +125,39 @@ Reply with only JSON matching exactly this shape:
   return { ok: true, data };
 }
 
+/**
+ * Fibu's personal note on the plan reveal. Rule-based reasons always show; this
+ * adds two or three human sentences tied to the user's own answers. Null on any
+ * failure or after 9 s, so onboarding never waits on the network.
+ */
+export async function writePlanNote(input: {
+  name?: string;
+  goal: string;
+  experience: string;
+  daysPerWeek: number;
+  sessionMinutes: number;
+  equipment: string;
+  injuries: string[];
+  splitName: string;
+  sampleDay: string;
+  calories: number;
+  proteinG: number;
+}): Promise<string | null> {
+  const prompt = `You are Fibu, a warm, direct robot fitness coach in a training app. Write a short personal note (2-3 sentences, under 60 words) to ${input.name || 'the user'} explaining why this plan suits them. Mention at least one specific detail from their answers. Plain language, no hype words, no emoji, no quotation marks, no medical claims.
+
+Their answers: goal ${input.goal.replace('_', ' ')}, ${input.experience} lifter, ${input.daysPerWeek} days a week, ${input.sessionMinutes}-minute sessions, trains ${input.equipment}${input.injuries.length ? `, protecting their ${input.injuries.join(' and ')}` : ''}.
+The plan: ${input.splitName}. First workout: ${input.sampleDay}. Daily target: ${input.calories} kcal and ${input.proteinG} g protein.
+
+Reply with only the note.`;
+  const result = await Promise.race([
+    generateText(prompt, 0.7),
+    new Promise<{ ok: false; error: string }>((resolve) => setTimeout(() => resolve({ ok: false, error: 'timeout' }), 9000)),
+  ]);
+  if (!result.ok) return null;
+  const text = result.data.trim().replace(/^["']|["']$/g, '');
+  return text.length > 20 && text.length < 500 ? text : null;
+}
+
 export function buildChatContext(profile: Profile | undefined, recentSessions: WorkoutSession[]): string {
   const lines: string[] = [];
   if (profile) {
