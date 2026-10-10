@@ -59,7 +59,9 @@ export default defineConfig(({ mode }) => ({
     tailwindcss(),
     devAiApi(loadEnv(mode, process.cwd(), '')),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt': a new version waits until the user taps "Update", so an update can never
+      // reload the page in the middle of a workout and wipe unsaved sets.
+      registerType: 'prompt',
       includeAssets: ['icon.svg'],
       manifest: {
         name: 'Fibu',

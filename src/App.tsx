@@ -3,6 +3,7 @@ import { useEffect, type ReactNode } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/AppShell';
 import { DiagPanel } from './components/DiagPanel';
+import { UpdateBanner } from './components/UpdateBanner';
 import { bootstrap } from './lib/bootstrap';
 import { db } from './lib/db';
 import { Body } from './pages/Body';
@@ -39,6 +40,7 @@ function App() {
   return (
     <HashRouter>
       <DiagPanel />
+      <UpdateBanner />
       <Routes>
         <Route path="/onboarding" element={<Onboarding />} />
         <Route
