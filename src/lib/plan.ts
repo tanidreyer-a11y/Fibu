@@ -1,5 +1,6 @@
-import type { EquipmentAccess, Experience, Goal, PlanDay, PlanItem, Prescription, Profile } from './db';
-import { EXERCISE_LIBRARY, type CuratedExercise, type Equipment, type Injury, type Level, type Pattern } from './exercises';
+import { addDays, localDate } from './dates';
+import type { EquipmentAccess, Experience, Goal, PlanDay, PlanItem, Prescription, Profile, WorkoutSession } from './db';
+import { EXERCISE_LIBRARY, LADDERS, type CuratedExercise, type Equipment, type Injury, type Level, type Pattern } from './exercises';
 import { MUSCLE_GROUP_LABELS } from './muscleGroups';
 
 // ─── Day templates: movement slots in priority order. Session length trims from the end.
@@ -247,6 +248,34 @@ export function weekVariant(date = new Date()): 0 | 1 {
 
 export function exerciseForItem(item: PlanItem, variant: 0 | 1 = weekVariant()): string {
   return item.exerciseIds[variant] ?? item.exerciseIds[0];
+}
+
+/**
+ * Progress never goes backwards on a ladder. If the plan picks a rung (say
+ * Decline Push-Up) but the user has logged a harder rung of the same ladder in
+ * the last 8 weeks (Diamond), they get the harder one. Without this the A/B week
+ * rotation could hand back an easier variation after a level-up.
+ */
+export function currentRung(exerciseId: string, sessions: Pick<WorkoutSession, 'date' | 'exerciseEntries'>[], today = new Date()): string {
+  const ladder = LADDERS.find((l) => l.includes(exerciseId));
+  if (!ladder) return exerciseId;
+  const sinceStr = addDays(localDate(today), -56);
+  let best = ladder.indexOf(exerciseId);
+  for (const s of sessions) {
+    if (s.date < sinceStr) continue;
+    for (const e of s.exerciseEntries) {
+      const i = ladder.indexOf(e.exerciseId);
+      if (i > best && e.sets.length > 0) best = i;
+    }
+  }
+  return ladder[best];
+}
+
+/** Where a candidate sits relative to the current move on the same ladder, if they share one. */
+export function ladderRelation(currentId: string, candidateId: string): 'harder' | 'easier' | null {
+  const ladder = LADDERS.find((l) => l.includes(currentId) && l.includes(candidateId));
+  if (!ladder) return null;
+  return ladder.indexOf(candidateId) > ladder.indexOf(currentId) ? 'harder' : 'easier';
 }
 
 export function focusLabel(day: PlanDay): string {

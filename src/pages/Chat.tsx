@@ -1,4 +1,4 @@
-import { ArrowCounterClockwise, Barbell, Camera, CheckCircle, Drop, ForkKnife, Microphone, PaperPlaneRight, Scales, Target, Trash, X, ArrowSquareOut, type Icon } from '@phosphor-icons/react';
+import { ArrowCounterClockwise, Barbell, CalendarCheck, Camera, CheckCircle, Drop, ForkKnife, Microphone, PaperPlaneRight, Scales, Target, Trash, X, ArrowSquareOut, type Icon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MascotAvatar, MascotSays } from '../components/Mascot';
@@ -13,7 +13,7 @@ const undoRegistry = new Map<string, () => Promise<void>>();
 
 const STARTERS = ['I just did 3 sets of 10 push-ups', 'Log 500 ml of water', 'How much protein do I have left today?', 'How is my bench press going?'];
 
-const CARD_ICON: Record<ActionCard['kind'], Icon> = { meal: ForkKnife, workout: Barbell, weight: Scales, water: Drop, goal: Target, nav: ArrowSquareOut };
+const CARD_ICON: Record<ActionCard['kind'], Icon> = { meal: ForkKnife, workout: Barbell, weight: Scales, water: Drop, goal: Target, nav: ArrowSquareOut, schedule: CalendarCheck };
 
 function loadChat(): ChatItem[] {
   try {

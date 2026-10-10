@@ -1,4 +1,4 @@
-﻿import { Lightning, Microphone, Plus, Sparkle } from '@phosphor-icons/react';
+﻿import { CalendarBlank, Lightning, Microphone, Plus, Sparkle } from '@phosphor-icons/react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -10,9 +10,10 @@ import { VoiceLogSheet } from '../components/VoiceLogSheet';
 import { Button } from '../components/ui/Button';
 import { PressCard } from '../components/ui/Card';
 import { Sheet } from '../components/ui/Sheet';
-import { localDate } from '../lib/dates';
+import { addDays, friendlyDate, localDate } from '../lib/dates';
+import { describeDays, detectMovedSession, planSchedule, rememberScheduleAnswer, saveSchedule, scheduleQuestionAnswered, WEEKDAY_NAMES } from '../lib/schedule';
 import { db, type Exercise, type PlanDay, type Prescription, type SetEntry, type WorkoutSession } from '../lib/db';
-import { exerciseForItem, focusLabel, nextPlanDay, weekVariant } from '../lib/plan';
+import { currentRung, exerciseForItem, focusLabel, nextPlanDay, weekVariant } from '../lib/plan';
 import { calculateIntensityScore, lastSetForExercise, suggestProgressiveOverload } from '../lib/training';
 import { useRestTimer } from '../store/restTimer';
 
@@ -35,12 +36,24 @@ export function WorkoutLog() {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [startedAt, setStartedAt] = useState<string | null>(null);
+  const today = localDate();
+  const [logDate, setLogDate] = useState(today);
+  const [scheduleAnswer, setScheduleAnswer] = useState<'shift' | 'keep' | null>(null);
+  const profile = useLiveQuery(() => db.profile.get('me'));
 
   const units = settings?.units ?? 'kg';
   const exercisesById = useMemo(() => new Map((exercises ?? []).map((e) => [e.id, e])), [exercises]);
   const variant = weekVariant();
   const lastSession = sessions?.[sessions.length - 1];
   const upNext = plan ? nextPlanDay(plan.days, lastSession?.dayLabel) : undefined;
+  const schedule = planSchedule(plan, profile);
+  const moved = plan && sessions && !scheduleQuestionAnswered(today) ? detectMovedSession(schedule, sessions, today) : null;
+
+  async function answerSchedule(answer: 'shift' | 'keep') {
+    if (answer === 'shift' && moved) await saveSchedule(moved.shifted);
+    rememberScheduleAnswer(answer, today);
+    setScheduleAnswer(answer);
+  }
 
   // Fibu's chat can say "start my workout": it leaves the day in sessionStorage and opens this screen.
   useEffect(() => {
@@ -82,7 +95,7 @@ export function WorkoutLog() {
     if (day.items?.length) {
       setEntries(
         day.items.map((item) => {
-          const exerciseId = exerciseForItem(item, variant);
+          const exerciseId = currentRung(exerciseForItem(item, variant), sessions ?? []);
           const target: Prescription = { sets: item.sets, repsMin: item.repsMin, repsMax: item.repsMax, restSec: item.restSec, unit: item.unit };
           return { exerciseId, target, pattern: item.pattern, optionIds: item.exerciseIds, sets: startingSets(exerciseId, target) };
         }),
@@ -139,11 +152,14 @@ export function WorkoutLog() {
     const draft: Pick<WorkoutSession, 'exerciseEntries'> = { exerciseEntries };
     const intensity = calculateIntensityScore(draft, recent);
     const now = new Date();
+    // A workout logged for an earlier day gets that day's date; its length isn't known, so start = end.
+    const backdated = logDate !== localDate(now);
+    const stamp = backdated ? new Date(`${logDate}T${now.toTimeString().slice(0, 8)}`).toISOString() : now.toISOString();
     const id = await db.sessions.add({
-      date: localDate(now),
+      date: logDate,
       dayLabel,
-      startedAt: startedAt ?? now.toISOString(),
-      completedAt: now.toISOString(),
+      startedAt: backdated ? stamp : (startedAt ?? stamp),
+      completedAt: stamp,
       exerciseEntries,
       intensityScore: intensity.score,
       source: 'app',
@@ -163,6 +179,31 @@ export function WorkoutLog() {
           <MascotSays pose="stand" size={104}>
             No plan yet. Go freeform and log whatever you're doing today.
           </MascotSays>
+        )}
+
+        {moved && !scheduleAnswer && (
+          <div className="animate-rise-in flex flex-col gap-3 rounded-2xl border-2 border-b-4 border-water/50 bg-water-tint p-4">
+            <p className="text-[15px] leading-snug font-bold text-text">
+              I see you missed your {WEEKDAY_NAMES[moved.missedWeekday]} session and you're training on {WEEKDAY_NAMES[moved.todayWeekday]} instead. Want your
+              training days to shift to <b className="font-black">{describeDays(moved.shifted)}</b> from now on, or stick with{' '}
+              <b className="font-black">{describeDays(schedule)}</b>?
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" className="flex-1" onClick={() => answerSchedule('shift')}>
+                Shift to {WEEKDAY_NAMES[moved.todayWeekday].slice(0, 3)}
+              </Button>
+              <Button size="sm" variant="secondary" className="flex-1" onClick={() => answerSchedule('keep')}>
+                Keep my days
+              </Button>
+            </div>
+          </div>
+        )}
+        {scheduleAnswer && (
+          <p className="animate-rise-in rounded-2xl bg-water-tint px-4 py-3 text-sm font-extrabold text-water-text">
+            {scheduleAnswer === 'shift'
+              ? `Done. Your training days are now ${describeDays(planSchedule(plan, profile))}.`
+              : `Got it, keeping ${describeDays(schedule)}. Today counts as a one-off.`}
+          </p>
         )}
 
         <div className="flex items-end justify-between">
@@ -232,6 +273,45 @@ export function WorkoutLog() {
         <button onClick={cancel} className="shrink-0 pt-1.5 text-sm font-extrabold text-text-faint [@media(hover:hover)]:hover:text-danger">
           Cancel
         </button>
+      </div>
+
+      {/* Logging a workout you already did on an earlier day. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <CalendarBlank size={18} weight="bold" className="text-text-faint" />
+        {[today, addDays(today, -1)].map((d) => (
+          <button
+            key={d}
+            onClick={() => setLogDate(d)}
+            aria-pressed={logDate === d}
+            className={`rounded-lg px-2.5 py-1.5 text-xs font-extrabold ${logDate === d ? 'bg-text text-bg' : 'bg-bg-raised-2 text-text-muted'}`}
+          >
+            {friendlyDate(d, today)}
+          </button>
+        ))}
+        <label
+          onClick={(e) => {
+            // Desktop browsers only open the calendar via showPicker(); iPhone opens it on tap anyway.
+            const input = e.currentTarget.querySelector('input');
+            try {
+              input?.showPicker?.();
+            } catch {
+              input?.focus();
+            }
+          }}
+          className={`flex cursor-pointer items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-extrabold ${
+            logDate < addDays(today, -1) ? 'bg-text text-bg' : 'bg-bg-raised-2 text-text-muted'
+          }`}
+        >
+          {logDate < addDays(today, -1) ? friendlyDate(logDate, today) : 'Earlier'}
+          <input
+            type="date"
+            max={today}
+            value={logDate}
+            onChange={(e) => e.target.value && e.target.value <= today && setLogDate(e.target.value)}
+            aria-label="Pick the day you trained"
+            className="w-0 opacity-0"
+          />
+        </label>
       </div>
 
       {totalSets > 0 && (

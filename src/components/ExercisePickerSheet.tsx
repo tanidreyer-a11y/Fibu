@@ -15,6 +15,7 @@ import {
   type EquipmentFilter,
 } from '../lib/exerciseFilters';
 import { MUSCLE_GROUP_LABELS, type MuscleGroup } from '../lib/muscleGroups';
+import { ladderRelation } from '../lib/plan';
 import { ExerciseDetail } from './ExerciseDetail';
 import { ExerciseThumb } from './ExerciseThumb';
 import { Button } from './ui/Button';
@@ -44,7 +45,15 @@ function Row({ exercise, onPick, onInfo, badge }: { exercise: Exercise; onPick: 
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
             <span className="truncate text-[15px] font-extrabold text-text">{exercise.name}</span>
-            {badge && <span className="shrink-0 rounded-md bg-accent-tint px-1.5 py-0.5 text-[10px] font-extrabold text-accent-text uppercase">{badge}</span>}
+            {badge && (
+              <span
+                className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold uppercase ${
+                  badge === 'Harder' ? 'bg-protein-tint text-protein-text' : badge === 'Easier' ? 'bg-bg-raised-2 text-text-muted' : 'bg-accent-tint text-accent-text'
+                }`}
+              >
+                {badge}
+              </span>
+            )}
           </span>
           <span className="block truncate text-xs font-bold text-text-faint">
             {MUSCLE_GROUP_LABELS[exercise.muscleGroups[0]] ?? exercise.muscleGroups[0]} · {EQUIPMENT_LABEL[exercise.equipment] ?? exercise.equipment}
@@ -250,9 +259,12 @@ export function ExercisePickerSheet({ onClose, onSelect, swap }: ExercisePickerS
             <section className="mb-3">
               <h3 className="mb-1 text-sm font-extrabold text-text-muted">Same movement</h3>
               <ul className="flex flex-col">
-                {sameSlot.map((e, i) => (
-                  <Row key={e.id} exercise={e} badge={i === 0 ? 'Best swap' : undefined} onPick={() => pick(e)} onInfo={() => setDetail(e)} />
-                ))}
+                {sameSlot.map((e, i) => {
+                  // On a progression ladder, say plainly whether a swap is a step up or a step back.
+                  const rel = swap?.currentId ? ladderRelation(swap.currentId, e.id) : null;
+                  const badge = rel === 'harder' ? 'Harder' : rel === 'easier' ? 'Easier' : i === 0 ? 'Best swap' : undefined;
+                  return <Row key={e.id} exercise={e} badge={badge} onPick={() => pick(e)} onInfo={() => setDetail(e)} />;
+                })}
               </ul>
             </section>
           )}

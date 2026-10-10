@@ -1,5 +1,7 @@
 import type { AiTool } from './ai';
-import { addDays, localDate } from './dates';
+import { addDays, friendlyDate, localDate } from './dates';
+import { describeDays, planSchedule, rememberScheduleAnswer, saveSchedule, weekdayOf } from './schedule';
+import { suggestProgressiveOverload } from './training';
 import { db, type Exercise, type Goal, type MealType, type SetEntry } from './db';
 import { compact } from './exerciseFilters';
 import { addFood, currentMeal, logWater, sumFood } from './food';
@@ -25,6 +27,7 @@ export const AGENT_TOOLS: AiTool[] = [
           fatG: { type: 'number' },
           mealType: { type: 'string', enum: ['breakfast', 'lunch', 'dinner', 'snack'] },
           estimate: { type: 'boolean', description: 'true when numbers are your estimate, false when read from a label or given by the user' },
+          date: { type: 'string', description: 'YYYY-MM-DD, only when it was eaten on an earlier day (e.g. "yesterday"). Omit for today.' },
         },
         required: ['name', 'calories', 'proteinG', 'carbsG', 'fatG'],
       },
@@ -39,6 +42,7 @@ export const AGENT_TOOLS: AiTool[] = [
         type: 'object',
         properties: {
           title: { type: 'string', description: 'Session name, e.g. "Push day" or "Home workout"' },
+          date: { type: 'string', description: 'YYYY-MM-DD, only when the workout was on an earlier day (e.g. "yesterday", "on Friday"). Omit for today.' },
           exercises: {
             type: 'array',
             items: {
@@ -117,6 +121,20 @@ export const AGENT_TOOLS: AiTool[] = [
   {
     type: 'function',
     function: {
+      name: 'update_schedule',
+      description: "Set which weekdays the user trains, e.g. after they choose to shift a missed Friday to Saturday. Only call after they've agreed.",
+      parameters: {
+        type: 'object',
+        properties: {
+          days: { type: 'array', items: { type: 'string', enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] } },
+        },
+        required: ['days'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'start_workout',
       description: "Open the workout screen ready to train. Omit dayLabel to start the plan's next day.",
       parameters: { type: 'object', properties: { dayLabel: { type: 'string' } } },
@@ -149,7 +167,7 @@ export const AGENT_TOOLS: AiTool[] = [
 
 export interface ActionCard {
   id: string;
-  kind: 'meal' | 'workout' | 'weight' | 'water' | 'goal' | 'nav';
+  kind: 'meal' | 'workout' | 'weight' | 'water' | 'goal' | 'nav' | 'schedule';
   title: string;
   detail?: string;
   undone?: boolean;
@@ -166,6 +184,26 @@ export interface ToolOutcome {
   undo?: () => Promise<void>;
   /** quick replies to render; the loop stops and waits for the user */
   ask?: { question: string; options: string[] };
+}
+
+/**
+ * Accept the model's date as YYYY-MM-DD, "yesterday", or a weekday name (the most
+ * recent one before today). Anything in the future or older than 30 days falls back to today.
+ */
+function pickDate(raw: unknown, today: string): string {
+  const s = String(raw ?? '').trim().toLowerCase();
+  if (!s || s === 'today') return today;
+  if (s === 'yesterday') return addDays(today, -1);
+  const weekdays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const wd = weekdays.findIndex((w) => s === w || s === w.slice(0, 3));
+  if (wd >= 0) {
+    for (let back = 1; back <= 7; back++) {
+      const d = addDays(today, -back);
+      if (weekdayOf(d) === wd) return d;
+    }
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s) || s > today || s < addDays(today, -30)) return today;
+  return s;
 }
 
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : Number(v) || fallback);
@@ -278,11 +316,17 @@ export async function runTool(name: string, rawArgs: string, ctx: ToolContext): 
       const mealType = (['breakfast', 'lunch', 'dinner', 'snack'] as const).includes(args.mealType as MealType) ? (args.mealType as MealType) : currentMeal();
       const draft = { name: String(args.name ?? 'Meal'), calories: num(args.calories), proteinG: num(args.proteinG), carbsG: num(args.carbsG), fatG: num(args.fatG) };
       if (draft.calories <= 0) return { result: { ok: false, error: 'calories must be above 0' } };
-      const id = await addFood(draft, { source: 'chat', confidence: args.estimate === false ? 'exact' : 'estimate', mealType });
-      const totals = sumFood(await db.foodLog.where('date').equals(today).toArray());
+      const date = pickDate(args.date, today);
+      const id = await addFood(draft, { source: 'chat', confidence: args.estimate === false ? 'exact' : 'estimate', mealType, date });
+      const totals = sumFood(await db.foodLog.where('date').equals(date).toArray());
       return {
-        result: { ok: true, logged: draft, mealType, todayTotalCalories: Math.round(totals.calories), todayProteinG: Math.round(totals.proteinG) },
-        card: { id: cardId(), kind: 'meal', title: `Logged ${draft.name}`, detail: `${Math.round(draft.calories)} kcal · ${Math.round(draft.proteinG)} g protein · ${MEAL_LABEL[mealType]}` },
+        result: { ok: true, logged: draft, mealType, date, dayTotalCalories: Math.round(totals.calories), dayProteinG: Math.round(totals.proteinG) },
+        card: {
+          id: cardId(),
+          kind: 'meal',
+          title: `Logged ${draft.name}`,
+          detail: `${Math.round(draft.calories)} kcal · ${Math.round(draft.proteinG)} g protein · ${MEAL_LABEL[mealType]}${date !== today ? ` · ${friendlyDate(date, today)}` : ''}`,
+        },
         undo: async () => {
           await db.foodLog.delete(id);
         },
@@ -311,9 +355,10 @@ export async function runTool(name: string, rawArgs: string, ctx: ToolContext): 
         entries.push({ exerciseId: ex.id, name: ex.name, sets: Array.from({ length: sets }, () => ({ ...set })) });
       }
       if (!entries.length) return { result: { ok: false, error: 'Could not read any exercise names' } };
+      const date = pickDate(args.date, today);
       const now = new Date().toISOString();
       const id = (await db.sessions.add({
-        date: today,
+        date,
         dayLabel: String(args.title ?? 'Logged with Fibu').slice(0, 40),
         startedAt: now,
         completedAt: now,
@@ -321,9 +366,18 @@ export async function runTool(name: string, rawArgs: string, ctx: ToolContext): 
         source: 'chat',
       })) as number;
       const summary = entries.map((e) => `${e.name} ${e.sets.length}×${e.sets[0].reps}${e.sets[0].weightKg ? ` @ ${e.sets[0].weightKg} kg` : ''}`);
+      // Next-time advice comes from the app's own progression rules, so the coach never improvises
+      // (and never suggests an easier variation as "progress").
+      const units = (await db.settings.get('app'))?.units ?? 'kg';
+      const nextTime = entries.map((e) => {
+        const ex = all.find((x) => x.id === e.exerciseId);
+        const s = suggestProgressiveOverload(e.sets[0], units, { exercise: ex });
+        const harder = s.nextExerciseId ? all.find((x) => x.id === s.nextExerciseId)?.name : undefined;
+        return `${e.name}: ${harder ? `ready for ${harder} next time` : s.message}`;
+      });
       return {
-        result: { ok: true, sessionId: id, logged: summary, newCustomExercises: created.length },
-        card: { id: cardId(), kind: 'workout', title: 'Workout logged', detail: summary.join(' · ') },
+        result: { ok: true, sessionId: id, date, logged: summary, nextTime, newCustomExercises: created.length },
+        card: { id: cardId(), kind: 'workout', title: date === today ? 'Workout logged' : `Workout logged for ${friendlyDate(date, today)}`, detail: summary.join(' · ') },
         undo: async () => {
           await db.sessions.delete(id);
           if (created.length) await db.exercises.bulkDelete(created);
@@ -466,6 +520,24 @@ export async function runTool(name: string, rawArgs: string, ctx: ToolContext): 
             await db.settings.put(settings);
             if (plan) await db.plan.put(plan);
           });
+        },
+      };
+    }
+
+    case 'update_schedule': {
+      const names = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const days = (Array.isArray(args.days) ? args.days : []).map((d) => names.indexOf(String(d).toLowerCase())).filter((d) => d >= 0);
+      if (!days.length) return { result: { ok: false, error: 'No valid weekdays given' } };
+      const [plan, profile] = await Promise.all([db.plan.get('active'), db.profile.get('me')]);
+      if (!plan) return { result: { ok: false, error: 'No plan yet' } };
+      const before = planSchedule(plan, profile);
+      await saveSchedule(days);
+      rememberScheduleAnswer('shift', today);
+      return {
+        result: { ok: true, trainingDays: describeDays(days) },
+        card: { id: cardId(), kind: 'schedule', title: 'Training days updated', detail: describeDays(days) },
+        undo: async () => {
+          await saveSchedule(before);
         },
       };
     }

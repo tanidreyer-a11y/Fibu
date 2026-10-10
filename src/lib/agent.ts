@@ -1,6 +1,7 @@
 import { aiChat, type AiContentPart, type AiMessage } from './ai';
 import { AGENT_TOOLS, runTool, type ActionCard, type ToolContext } from './agentTools';
-import { localDate } from './dates';
+import { addDays, localDate } from './dates';
+import { describeDays, detectMovedSession, planSchedule, scheduleQuestionAnswered, WEEKDAY_NAMES } from './schedule';
 import { db } from './db';
 import { sumFood } from './food';
 import { nextPlanDay } from './plan';
@@ -23,7 +24,8 @@ How you work:
 - You can only change the user's data by calling a tool. Never say you logged, added, saved or updated anything unless you called the tool for it in this turn.
 - When the user reports eating, drinking, training or weighing in ("just had", "did 3x10", "drank a bottle", "I'm 82 kg"), log it with the right tool. Don't ask permission for that.
 - Food photos: identify each item and estimate portions from the plate. If something that changes the total a lot is unclear (portion, cooking oil or butter, sauce, a drink, what the dish actually is), ask ONE short question with ask_user and 2-4 tap options before logging. If the user already gave details or says "just log it", log right away with your best estimate (estimate: true). If the photo is a nutrition label, read it and ask how many servings they had.
-- Workouts: log what they say with log_workout. Convert lb to kg. "3 sets of 10 push-ups" means sets 3, reps 10, weightKg 0.
+- Workouts: log what they say with log_workout. Convert lb to kg. "3 sets of 10 push-ups" means sets 3, reps 10, weightKg 0. If it was on an earlier day ("yesterday", "on Friday"), pass that date as YYYY-MM-DD.
+- What to do next time: only use the nextTime advice log_workout returns (the app's progression rules). Never invent a progression and never suggest an easier variation as progress.
 - Never invent the user's numbers. Use get_today or get_history before answering questions about their progress, food or past workouts.
 - Only call update_goal after the user clearly agrees to the exact change.
 - Use start_workout or navigate when they want to train now or see a screen.
@@ -43,14 +45,24 @@ async function snapshot(): Promise<string> {
   const t = sumFood(food);
   const now = new Date();
   const lines = [
-    `Now: ${now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}, ${now.toTimeString().slice(0, 5)}.`,
+    `Now: ${now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}, ${now.toTimeString().slice(0, 5)}. Today is ${today}; yesterday was ${addDays(today, -1)}. Use these exact YYYY-MM-DD dates for the date field when something happened on an earlier day.`,
     profile
       ? `User: ${profile.name ?? 'unnamed'}, goal ${profile.goal.replace('_', ' ')}, ${profile.experience}, ${profile.weightKg} kg${profile.goalWeightKg ? ` (goal ${profile.goalWeightKg} kg)` : ''}, trains ${profile.daysPerWeek}x/week${profile.equipment ? ` (${profile.equipment})` : ''}${profile.injuries?.length ? `, careful with ${profile.injuries.join(', ')}` : ''}. Units: ${settings?.units ?? 'kg'}.`
       : 'No profile yet.',
     `Targets: ${settings?.calorieTarget ?? '?'} kcal, ${settings?.proteinTargetG ?? '?'} g protein, ${settings?.waterTargetMl ?? '?'} ml water.`,
     `Today so far: ${Math.round(t.calories)} kcal, ${Math.round(t.proteinG)} g protein, ${water.reduce((s, w) => s + w.ml, 0)} ml water, ${food.length} food entries.`,
   ];
-  if (plan) lines.push(`Plan: ${plan.splitName ?? 'custom'}. Next workout: ${nextPlanDay(plan.days, recent[0]?.dayLabel)?.label ?? 'none'}.`);
+  if (plan) {
+    const schedule = planSchedule(plan, profile);
+    lines.push(`Plan: ${plan.splitName ?? 'custom'}. Training days: ${describeDays(schedule)}. Next workout: ${nextPlanDay(plan.days, recent[0]?.dayLabel)?.label ?? 'none'}.`);
+    const allSessions = await db.sessions.where('date').aboveOrEqual(addDays(today, -7)).toArray();
+    const moved = scheduleQuestionAnswered(today) ? null : detectMovedSession(schedule, allSessions, today);
+    if (moved) {
+      lines.push(
+        `Schedule note: today (${WEEKDAY_NAMES[moved.todayWeekday]}) is not a training day and the ${WEEKDAY_NAMES[moved.missedWeekday]} session was missed. If they train or log a workout today, ask with ask_user whether to shift their days to ${describeDays(moved.shifted)} or keep ${describeDays(schedule)}. If they choose to shift, call update_schedule with the new days.`,
+      );
+    }
+  }
   if (recent.length) lines.push(`Recent workouts: ${recent.map((s) => `${s.date} ${s.dayLabel}`).join('; ')}.`);
   return lines.join('\n');
 }

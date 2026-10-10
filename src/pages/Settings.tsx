@@ -12,6 +12,7 @@ import { db, type AppSettings, type Theme, type Units } from '../lib/db';
 import { BUILD_TAG } from '../lib/diag';
 import { computeTargets, estimateCalorieTarget, estimateProteinTarget } from '../lib/nutrition';
 import { defaultSchedule, focusLabel, generatePlan, planInputFromProfile } from '../lib/plan';
+import { describeDays, planSchedule, saveSchedule, WEEK_ORDER, WEEKDAY_SHORT } from '../lib/schedule';
 import { displayWeight } from '../lib/units';
 
 const GOAL_LABEL: Record<string, string> = { muscle_gain: 'Build muscle', fat_loss: 'Lose fat', strength: 'Get stronger', general_fitness: 'Get fit and healthy' };
@@ -32,6 +33,7 @@ export function Settings() {
 
   if (!settings || !profile) return <p className="font-bold text-text-muted">Loading…</p>;
   const units = settings.units;
+  const schedule = planSchedule(plan, profile);
 
   // put() replaces the whole row, so every update starts from the stored settings.
   const saveSettings = (patch: Partial<AppSettings>) => db.settings.put({ ...settings, ...patch });
@@ -128,6 +130,36 @@ export function Settings() {
             <Button size="sm" variant="secondary" onClick={rebuildPlan}>
               <ArrowsClockwise size={16} weight="bold" /> Rebuild
             </Button>
+          </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-extrabold text-text-muted">
+              Training days <span className="font-bold text-text-faint">({describeDays(schedule)})</span>
+            </p>
+            <div className="grid grid-cols-7 gap-1">
+              {WEEK_ORDER.map((wd) => {
+                const on = schedule.includes(wd);
+                return (
+                  <button
+                    key={wd}
+                    onClick={() => {
+                      const next = on ? schedule.filter((d) => d !== wd) : [...schedule, wd];
+                      if (next.length) void saveSchedule(next);
+                    }}
+                    aria-pressed={on}
+                    className={`press-3d press-3d-sm h-11 rounded-xl border-2 text-xs font-black ${
+                      on ? 'border-accent bg-accent text-accent-ink [--ledge-color:var(--color-accent-ledge)]' : 'border-border bg-bg-raised text-text-muted [--ledge-color:var(--color-border)]'
+                    }`}
+                  >
+                    {WEEKDAY_SHORT[wd]}
+                  </button>
+                );
+              })}
+            </div>
+            {schedule.length !== plan.days.length && (
+              <p className="text-xs font-bold text-text-faint">
+                Your plan has {plan.days.length} workouts a week. Fibu keeps them in order whichever days you pick; change "days a week" in your answers to rebuild the plan.
+              </p>
+            )}
           </div>
           <ul className="flex flex-col gap-1.5">
             {plan.days.map((d, i) => (
